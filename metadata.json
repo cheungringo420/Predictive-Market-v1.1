@@ -1,0 +1,5 @@
+{
+  "name": "Predictive Horizon",
+  "description": "A decentralized prediction market platform for forecasting real-world events, from finance to weather. Built as a proof-of-concept for exploring market-driven risk assessment and hedging tools.",
+  "requestFramePermissions": []
+}
