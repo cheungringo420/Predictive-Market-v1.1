@@ -10,8 +10,7 @@ coverage/
 dist/
 build/
 
-# Misc
-.DS_Store
+# Environment variables
 .env
 .env.local
 .env.development.local
@@ -35,9 +34,15 @@ lerna-debug.log*
 *.sln
 *.sw?
 
+# OS
+.DS_Store
+Thumbs.db
+
 # Vercel
 .vercel
 
 # Netlify
 .netlify
+
+# Vite
 .vite/
