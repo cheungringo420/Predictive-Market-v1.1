@@ -3,6 +3,7 @@ import { useAccount } from 'wagmi';
 import { Header } from './components/Header';
 import { MarketList } from './components/MarketList';
 import { MarketDetailModal } from './components/MarketDetailModal';
+import { CreateMarketModal } from './components/CreateMarketModal';
 import { fetchMarkets, placeTrade } from './services/marketService';
 import type { Market, TradeDirection } from './types';
 
@@ -11,6 +12,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
+  const [isCreateMarketOpen, setIsCreateMarketOpen] = useState<boolean>(false);
   
   // Use Wagmi's useAccount hook for wallet connection
   const { address: walletAddress, isConnected } = useAccount();
@@ -72,9 +74,26 @@ const App: React.FC = () => {
     return <MarketList markets={markets} onTrade={handleOpenMarketModal} onPlaceTrade={handlePlaceTrade} isConnected={isConnected} />;
   };
 
+  const handleMarketCreated = (marketAddress: string) => {
+    // Refresh markets list after market creation
+    const loadMarkets = async () => {
+      try {
+        setIsLoading(true);
+        const marketsData = await fetchMarkets();
+        setMarkets(marketsData);
+      } catch (err) {
+        setError('Failed to load markets. Please try again later.');
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadMarkets();
+  };
+
   return (
     <div className="min-h-screen bg-brand-bg text-brand-light font-sans">
-      <Header />
+      <Header onCreateMarketClick={() => setIsCreateMarketOpen(true)} />
       <main className="container mx-auto px-4 py-8">
         <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold text-white">Prediction Markets</h1>
@@ -87,6 +106,11 @@ const App: React.FC = () => {
         onClose={handleCloseMarketModal}
         isConnected={isConnected}
         onPlaceTrade={handlePlaceTrade}
+      />
+      <CreateMarketModal
+        isOpen={isCreateMarketOpen}
+        onClose={() => setIsCreateMarketOpen(false)}
+        onMarketCreated={handleMarketCreated}
       />
        <footer className="text-center py-6 border-t border-brand-border mt-12">
           <p className="text-brand-muted">Predictive Horizon - Capstone Project Prototype</p>

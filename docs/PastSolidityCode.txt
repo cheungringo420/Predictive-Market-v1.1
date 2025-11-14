@@ -1,0 +1,267 @@
+## All files deployed in the base sepolia testing network using solidity
+## My wallet address: 0xcD012E48473cd176c038148Ce82dc71A45bE7092
+
+
+## MarketFactory.sol
+# address: 
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+// 1. This "imports" our other contract so we can use it.
+import "./SimpleMarket.sol";
+
+/**
+ * @title MarketFactory
+ * @notice A factory contract to deploy and track new SimplePredictionMarket contracts.
+ */
+contract MarketFactory {
+
+    // This is our big list of all markets ever created.
+    address[] public allMarkets;
+
+    /**
+     * @notice Creates and deploys a new SimplePredictionMarket contract.
+     * @param _question The question for the new market.
+     */
+    function createMarket(string memory _question) public {
+        // 2. Create a new market, passing in the question AND the creator's address
+        // (msg.sender is the user who called createMarket)
+        SimplePredictionMarket newMarket = new SimplePredictionMarket(_question, msg.sender);
+        
+        // 3. Save the address of the newly created contract to our list
+        allMarkets.push(address(newMarket));
+    }
+
+    /**
+     * @notice Gets the list of all created market addresses.
+     * @return address[] A list of all market contract addresses.
+     */
+    function getAllMarkets() public view returns (address[] memory) {
+        return allMarkets;
+    }
+
+    /**
+     * @notice Gets the number of markets created.
+     */
+    function marketCount() public view returns (uint) {
+        return allMarkets.length;
+    }
+}
+
+'''
+
+
+## MarketFactoryV2.sol
+# address: 0xF3eA8120BEd32a9E5229D832F305BE3335342Cfb
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+// Import the MarketV2 contract so we can deploy it
+import "./MarketV2.sol";
+
+/**
+ * @title MarketFactoryV2
+ * @notice Deploys new MarketV2 contracts and tracks them.
+ */
+contract MarketFactoryV2 {
+
+    // --- State Variables ---
+
+    // The single, permanent address of the MockUSDC collateral token
+    address public immutable collateralToken;
+
+    // The list of all deployed markets
+    address[] public allMarkets;
+
+    // --- Events ---
+    event MarketCreated(
+        address indexed marketAddress,
+        string question,
+        address indexed creator
+    );
+
+    // --- Functions ---
+
+    /**
+     * @notice When we deploy the factory, we give it the
+     * address of the MockUSDC contract ONE time.
+     * @param _collateralToken The address of the deployed MockUSDC.sol
+     */
+    constructor(address _collateralToken) {
+        collateralToken = _collateralToken;
+    }
+
+    /**
+     * @notice Creates and deploys a new MarketV2 contract.
+     * @param _question The question for the new market.
+     */
+    function createMarket(string memory _question) public returns (address) {
+        
+        // 1. Deploy a new MarketV2 contract.
+        // We pass it the question, the creator (msg.sender),
+        // and the collateral address we stored in the constructor.
+        MarketV2 newMarket = new MarketV2(
+            _question,
+            msg.sender,
+            collateralToken 
+        );
+
+        // 2. Save the address of the newly deployed contract
+        address newMarketAddress = address(newMarket);
+        allMarkets.push(newMarketAddress);
+
+        // 3. Emit an event so our frontend can listen for this
+        emit MarketCreated(newMarketAddress, _question, msg.sender);
+
+        return newMarketAddress;
+    }
+
+    /**
+     * @notice Gets the list of all created market addresses.
+     */
+    function getAllMarkets() public view returns (address[] memory) {
+        return allMarkets;
+    }
+
+    /**
+     * @notice Gets the number of markets created.
+     */
+    function marketCount() public view returns (uint) {
+        return allMarkets.length;
+    }
+}
+
+
+# MarketV2.sol
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "./OutcomeToken.sol";
+import "@openzeppelin/contracts@5.0.2/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts@5.0.2/access/Ownable.sol";
+
+contract MarketV2 is Ownable {
+
+    // --- State Variables ---
+
+    string public question;
+    address public resolver;
+    
+    IERC20 public collateralToken;
+    OutcomeToken public yesToken;
+    OutcomeToken public noToken;
+
+    bool public marketResolved = false;
+    bool public outcomeWasYes;
+    
+    // AMM POOL ADDRESSES
+    address public yesPoolAddress;
+    address public noPoolAddress;
+
+    // --- Constants ---
+    // (18 decimals for outcome tokens - 6 decimals for USDC) = 10^12
+    uint constant private SCALING_FACTOR = 10 ** 12;
+
+    // --- Events ---
+    event Mint(address indexed user, uint amount);
+    event Resolve(bool indexed outcome);
+    event RedeemWinnings(address indexed user, uint amount);
+    event PoolsSet(address yesPool, address noPool);
+
+    // --- Constructor ---
+    constructor(
+        string memory _question,
+        address _creator,
+        address _collateralAddress
+    ) Ownable(msg.sender) { // Factory is the owner of this contract
+        question = _question;
+        resolver = _creator; // User who created the market is the resolver
+        collateralToken = IERC20(_collateralAddress);
+
+        // 1. Deploy the two new outcome tokens
+        yesToken = new OutcomeToken(
+            string.concat("YES-", _question), "YES"
+        );
+        noToken = new OutcomeToken(
+            string.concat("NO-", _question), "NO"
+        );
+
+        // 2. Transfer ownership of the tokens TO THIS MARKET CONTRACT
+        yesToken.transferOwnership(address(this));
+        noToken.transferOwnership(address(this));
+    }
+    
+    // --- Public Functions ---
+
+    /**
+     * @notice Mints a full set of (1 YES + 1 NO) tokens 
+     * in exchange for 1 unit of collateral (USDC).
+     * @param usdcAmount The amount of USDC (in 6-decimal units) to deposit.
+     */
+    function mint(uint usdcAmount) public {
+        require(!marketResolved, "Market is resolved");
+
+        // Convert the 6-decimal USDC amount to the 18-decimal outcome token amount
+        uint outcomeAmount = usdcAmount * SCALING_FACTOR; 
+
+        // 1. Pull USDC from the user's wallet
+        bool sent = collateralToken.transferFrom(msg.sender, address(this), usdcAmount);
+        require(sent, "Collateral transfer failed");
+
+        // 2. Mint 1:1 YES and NO tokens to the user
+        yesToken.mint(msg.sender, outcomeAmount);
+        noToken.mint(msg.sender, outcomeAmount);
+
+        emit Mint(msg.sender, outcomeAmount);
+    }
+    
+    /**
+     * @notice Resolves the market. Only the creator (resolver) can do this.
+     */
+    function resolveMarket(bool _outcomeWasYes) public {
+        require(msg.sender == resolver, "Only resolver can call");
+        require(!marketResolved, "Market already resolved");
+
+        marketResolved = true;
+        outcomeWasYes = _outcomeWasYes;
+        emit Resolve(_outcomeWasYes);
+    }
+    
+    /**
+     * @notice Redeems winning tokens for collateral AFTER resolution.
+     * @param amount The amount of WINNING tokens (18 decimals) to redeem.
+     */
+    function redeemWinnings(uint amount) public {
+        require(marketResolved, "Market not resolved");
+        
+        OutcomeToken winningToken = outcomeWasYes ? yesToken : noToken;
+        
+        // 1. Burn the winning tokens from the user
+        // Note: OutcomeToken requires an approve() call before calling this!
+        winningToken.burn(msg.sender, amount);
+        
+        // 2. Send them the equivalent amount of collateral (USDC)
+        // Convert 18-decimal token amount back to 6-decimal USDC amount
+        uint usdcAmount = amount / SCALING_FACTOR; 
+        bool sent = collateralToken.transfer(msg.sender, usdcAmount);
+        require(sent, "Collateral transfer failed");
+
+        emit RedeemWinnings(msg.sender, amount);
+    }
+
+    /**
+     * @notice The resolver calls this ONCE after creating the Uniswap pools.
+     */
+    function setPoolAddresses(address _yesPool, address _noPool) public {
+        require(msg.sender == resolver, "Only resolver can call");
+        require(yesPoolAddress == address(0), "Pools already set");
+        
+        yesPoolAddress = _yesPool;
+        noPoolAddress = _noPool;
+        
+        emit PoolsSet(_yesPool, _noPool);
+    }
+}

@@ -27,7 +27,7 @@ export const getMockUSDCAddress = (chainId: number): string | null => {
 // Uniswap V2 Router
 export const uniswapV2RouterAddress = "0x1689E7B1F10000AE47eBfE339a4f69dECd19F602";
 
-// Minimal ABIs for essential functions
+// MarketFactoryV2 ABI - Complete interface
 export const factoryABI = [
   {
     inputs: [],
@@ -35,6 +35,37 @@ export const factoryABI = [
     outputs: [{ internalType: "address[]", name: "", type: "address[]" }],
     stateMutability: "view",
     type: "function",
+  },
+  {
+    inputs: [],
+    name: "marketCount",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "collateralToken",
+    outputs: [{ internalType: "address", name: "", type: "address" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "string", name: "_question", type: "string" }],
+    name: "createMarket",
+    outputs: [{ internalType: "address", name: "", type: "address" }],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: "address", name: "marketAddress", type: "address" },
+      { indexed: false, internalType: "string", name: "question", type: "string" },
+      { indexed: true, internalType: "address", name: "creator", type: "address" },
+    ],
+    name: "MarketCreated",
+    type: "event",
   },
 ] as const;
 

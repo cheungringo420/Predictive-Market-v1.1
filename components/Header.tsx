@@ -1,7 +1,14 @@
 import React from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useAccount } from 'wagmi';
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+  onCreateMarketClick?: () => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({ onCreateMarketClick }) => {
+  const { isConnected } = useAccount();
+
   const handleLogoClick = () => {
     // Refresh the page to go to main page
     window.location.href = '/';
@@ -28,7 +35,17 @@ export const Header: React.FC = () => {
           </svg>
           <span className="text-xl font-bold text-white">Predictive Horizon</span>
         </div>
-        <ConnectButton />
+        <div className="flex items-center gap-3">
+          {isConnected && onCreateMarketClick && (
+            <button
+              onClick={onCreateMarketClick}
+              className="px-4 py-2 bg-brand-primary text-white font-semibold rounded-lg hover:bg-brand-secondary transition-colors text-sm"
+            >
+              + Create Market
+            </button>
+          )}
+          <ConnectButton />
+        </div>
       </div>
     </header>
   );
