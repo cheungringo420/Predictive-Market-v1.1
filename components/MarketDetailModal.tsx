@@ -73,6 +73,26 @@ export const MarketDetailModal: React.FC<MarketDetailModalProps> = ({ market, on
             setAmount('100');
         }
     }, [market]);
+
+    // Handle ESC key to close modal
+    useEffect(() => {
+        const handleEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape' && market) {
+                onClose();
+            }
+        };
+
+        if (market) {
+            document.addEventListener('keydown', handleEscape);
+            // Prevent body scroll when modal is open
+            document.body.style.overflow = 'hidden';
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleEscape);
+            document.body.style.overflow = 'unset';
+        };
+    }, [market, onClose]);
     
     const tradeDetails = useMemo(() => {
         if (!market || !amount || parseFloat(amount) <= 0) {
