@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useWriteContract, useWaitForTransactionReceipt, useAccount, useChainId } from 'wagmi';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
@@ -47,26 +47,34 @@ export const CreateMarketModal: React.FC<CreateMarketModalProps> = ({ isOpen, on
     }
   }, [isOpen]);
 
-  // Handle transaction success
+  // Handle transaction success - use ref to prevent multiple calls
+  const hasCalledCallback = useRef(false);
+  
   useEffect(() => {
-    if (isConfirmed && hash) {
+    if (isConfirmed && hash && !hasCalledCallback.current) {
+      hasCalledCallback.current = true;
+      
       toast.success('✅ Market created successfully!', {
         duration: 3000,
-        style: { background: '#10b981', color: '#fff' }
+        style: { background: '#10b981', color: '#fff' },
+        id: 'market-created-success' // Use unique ID to prevent duplicates
       });
       
       // Invalidate queries to refresh market list
       queryClient.invalidateQueries({ queryKey: ['readContract'] });
       
-      // Call callback if provided
+      // Call callback if provided (only once)
       if (onMarketCreated) {
-        // We'll get the market address from the event, but for now just pass the hash
         onMarketCreated(hash);
       }
       
       // Close modal after a short delay
       setTimeout(() => {
         onClose();
+        // Reset the ref after modal closes
+        setTimeout(() => {
+          hasCalledCallback.current = false;
+        }, 1000);
       }, 1500);
     }
   }, [isConfirmed, hash, onClose, onMarketCreated, queryClient]);

@@ -133,11 +133,17 @@ const mockMarkets: Market[] = [
 let marketsDB: Market[] = JSON.parse(JSON.stringify(mockMarkets));
 
 export const fetchMarkets = (): Promise<Market[]> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Return a deep copy and revive the dates before resolving.
-      resolve((JSON.parse(JSON.stringify(marketsDB)) as any[]).map(reviveDates));
-    }, 500); // Simulate network delay
+  return new Promise((resolve, reject) => {
+    try {
+      setTimeout(() => {
+        // Return a deep copy and revive the dates before resolving.
+        const markets = (JSON.parse(JSON.stringify(marketsDB)) as any[]).map(reviveDates);
+        resolve(markets);
+      }, 500); // Simulate network delay
+    } catch (error) {
+      console.error('Error in fetchMarkets:', error);
+      reject(error);
+    }
   });
 };
 
