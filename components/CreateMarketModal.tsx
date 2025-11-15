@@ -68,14 +68,15 @@ export const CreateMarketModal: React.FC<CreateMarketModalProps> = ({ isOpen, on
         onMarketCreated(hash);
       }
       
-      // Close modal after a short delay
+      // Close modal immediately after showing success
+      // Don't wait for market list refresh
       setTimeout(() => {
         onClose();
         // Reset the ref after modal closes
         setTimeout(() => {
           hasCalledCallback.current = false;
         }, 1000);
-      }, 1500);
+      }, 500); // Reduced delay to close faster
     }
   }, [isConfirmed, hash, onClose, onMarketCreated, queryClient]);
 

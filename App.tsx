@@ -21,11 +21,14 @@ const App: React.FC = () => {
     const loadMarkets = async () => {
       try {
         setIsLoading(true);
+        setError(null);
         const marketsData = await fetchMarkets();
         setMarkets(marketsData);
       } catch (err) {
+        console.error('Error loading markets:', err);
         setError('Failed to load markets. Please try again later.');
-        console.error(err);
+        // Set empty array to prevent crashes
+        setMarkets([]);
       } finally {
         setIsLoading(false);
       }
@@ -76,30 +79,24 @@ const App: React.FC = () => {
 
   const handleMarketCreated = (marketAddress: string) => {
     // Refresh markets list after market creation
-    // Add a delay to allow blockchain to sync
+    // Don't show loading state, just refresh in background
     const loadMarkets = async () => {
       try {
-        setIsLoading(true);
-        setError(null); // Clear any previous errors
-        
         // Wait a bit for the blockchain to sync
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         const marketsData = await fetchMarkets();
         setMarkets(marketsData);
+        setError(null); // Clear any errors
       } catch (err) {
         console.error('Error loading markets after creation:', err);
-        // Don't set error state, just log it
-        // The mock data will still show, and the new market will appear when chain syncs
-      } finally {
-        setIsLoading(false);
+        // Don't change state on error - keep showing existing markets
+        // The new market will appear when user manually refreshes or when chain syncs
       }
     };
     
-    // Only refresh if not already loading
-    if (!isLoading) {
-      loadMarkets();
-    }
+    // Refresh in background without showing loading state
+    loadMarkets();
   };
 
   return (
