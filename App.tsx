@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { useAccount } from 'wagmi';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAccount, useChainId, useWatchContractEvent } from 'wagmi';
 import { Header } from './components/Header';
 import { MarketList } from './components/MarketList';
 import { MarketDetailModal } from './components/MarketDetailModal';
 import { CreateMarketModal } from './components/CreateMarketModal';
 import { fetchMarkets, placeTrade } from './services/marketService';
+import { fetchMarketsFromContract } from './services/contractMarketService';
+import { factoryABI, getFactoryAddress } from './services/contracts/contractInfo';
 import type { Market, TradeDirection } from './types';
 
 const App: React.FC = () => {
@@ -13,29 +15,60 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
   const [isCreateMarketOpen, setIsCreateMarketOpen] = useState<boolean>(false);
-  
-  // Use Wagmi's useAccount hook for wallet connection
-  const { address: walletAddress, isConnected } = useAccount();
 
-  useEffect(() => {
-    const loadMarkets = async () => {
+  const { address: walletAddress, isConnected } = useAccount();
+  const chainId = useChainId();
+  const factoryAddress = chainId ? getFactoryAddress(chainId) : null;
+
+  const loadMarkets = useCallback(
+    async ({ showLoader = true, delayMs = 0 }: { showLoader?: boolean; delayMs?: number } = {}) => {
+      if (showLoader) setIsLoading(true);
+      setError(null);
+
       try {
-        setIsLoading(true);
-        setError(null);
-        const marketsData = await fetchMarkets();
-        setMarkets(marketsData);
+        if (delayMs) {
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
+
+        const [onChainMarkets, mockMarkets] = await Promise.all([
+          chainId ? fetchMarketsFromContract(chainId) : Promise.resolve<Market[]>([]),
+          fetchMarkets(),
+        ]);
+
+        const onChainIds = new Set(onChainMarkets.map((market) => market.id));
+        const fallbackMarkets =
+          onChainMarkets.length > 0
+            ? mockMarkets.filter((mock) => !onChainIds.has(mock.id))
+            : mockMarkets;
+
+        const combinedMarkets =
+          onChainMarkets.length > 0 ? [...onChainMarkets, ...fallbackMarkets] : fallbackMarkets;
+
+        setMarkets(combinedMarkets);
       } catch (err) {
         console.error('Error loading markets:', err);
         setError('Failed to load markets. Please try again later.');
-        // Set empty array to prevent crashes
-        setMarkets([]);
+        if (showLoader) {
+          setMarkets([]);
+        }
       } finally {
-        setIsLoading(false);
+        if (showLoader) setIsLoading(false);
       }
-    };
+    },
+    [chainId]
+  );
 
-    loadMarkets();
-  }, []);
+  useEffect(() => {
+    loadMarkets({ showLoader: true });
+  }, [loadMarkets]);
+
+  useWatchContractEvent({
+    address: factoryAddress as `0x${string}` | undefined,
+    abi: factoryABI,
+    eventName: 'MarketCreated',
+    listener: () => loadMarkets({ showLoader: false, delayMs: 1500 }),
+    enabled: !!factoryAddress,
+  });
 
   const handleOpenMarketModal = (market: Market) => {
     setSelectedMarket(market);
@@ -48,24 +81,18 @@ const App: React.FC = () => {
   const handlePlaceTrade = async (marketId: string, direction: TradeDirection, amount: number) => {
     try {
         const updatedMarket = await placeTrade(marketId, direction, amount);
-        
-        // Update the markets list
         setMarkets(prevMarkets => 
             prevMarkets.map(m => m.id === marketId ? updatedMarket : m)
         );
-        
-        // Update the selected market in the modal to reflect the change instantly
         if (selectedMarket?.id === marketId) {
             setSelectedMarket(updatedMarket);
         }
-
     } catch(err) {
         console.error("Trade failed:", err);
         alert("There was an error processing your trade.");
-        throw err; // Re-throw so the caller can handle its own state
+        throw err;
     }
   };
-
 
   const renderContent = () => {
     if (isLoading) {
@@ -77,26 +104,12 @@ const App: React.FC = () => {
     return <MarketList markets={markets} onTrade={handleOpenMarketModal} onPlaceTrade={handlePlaceTrade} isConnected={isConnected} />;
   };
 
-  const handleMarketCreated = (marketAddress: string) => {
-    // Refresh markets list after market creation
-    // Don't show loading state, just refresh in background
-    const loadMarkets = async () => {
-      try {
-        // Wait a bit for the blockchain to sync
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const marketsData = await fetchMarkets();
-        setMarkets(marketsData);
-        setError(null); // Clear any errors
-      } catch (err) {
-        console.error('Error loading markets after creation:', err);
-        // Don't change state on error - keep showing existing markets
-        // The new market will appear when user manually refreshes or when chain syncs
-      }
-    };
-    
-    // Refresh in background without showing loading state
-    loadMarkets();
+  const handleMarketCreated = () => {
+    loadMarkets({ showLoader: false, delayMs: 1500 });
+  };
+
+  const handleManualRefresh = () => {
+    loadMarkets({ showLoader: true });
   };
 
   return (
@@ -106,6 +119,21 @@ const App: React.FC = () => {
         <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold text-white">Prediction Markets</h1>
             <p className="text-lg text-brand-muted mt-2">Trade on the outcome of real-world events.</p>
+        </div>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
+          <div className="text-sm text-brand-muted">
+            Network:{' '}
+            <span className="text-white font-semibold">
+              {factoryAddress ? `Chain ID ${chainId}` : 'No supported factory on this network'}
+            </span>
+          </div>
+          <button
+            onClick={handleManualRefresh}
+            disabled={isLoading}
+            className="px-4 py-2 bg-brand-border text-white rounded-lg hover:bg-brand-border/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+          >
+            {isLoading ? 'Refreshing...' : 'Refresh Markets'}
+          </button>
         </div>
         {renderContent()}
       </main>

@@ -9,7 +9,7 @@ import { MarketCategory } from '../types';
 interface CreateMarketModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onMarketCreated?: (marketAddress: string) => void;
+  onMarketCreated?: (marketAddress?: string) => void;
 }
 
 const CloseIcon: React.FC<{ className: string }> = ({ className }) => (
