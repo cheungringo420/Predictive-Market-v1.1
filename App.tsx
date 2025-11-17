@@ -9,6 +9,9 @@ import { fetchMarketsFromContract } from './services/contractMarketService';
 import { factoryABI, getFactoryAddress } from './services/contracts/contractInfo';
 import type { Market, TradeDirection } from './types';
 
+const ONCHAIN_TIMEOUT_MS = 8000;
+const POLL_INTERVAL_MS = 45000;
+
 const App: React.FC = () => {
   const [markets, setMarkets] = useState<Market[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -17,11 +20,13 @@ const App: React.FC = () => {
   const [isCreateMarketOpen, setIsCreateMarketOpen] = useState<boolean>(false);
   const [isBackgroundRefreshing, setIsBackgroundRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
   const backgroundRequests = useRef(0);
 
   const { address: walletAddress, isConnected } = useAccount();
   const chainId = useChainId();
   const factoryAddress = chainId ? getFactoryAddress(chainId) : null;
+  const networkLabel = factoryAddress ? `Chain ID ${chainId}` : 'No supported factory on this network';
 
   const loadMarkets = useCallback(
     async ({ showLoader = true, delayMs = 0 }: { showLoader?: boolean; delayMs?: number } = {}) => {
@@ -38,8 +43,20 @@ const App: React.FC = () => {
           await new Promise((resolve) => setTimeout(resolve, delayMs));
         }
 
+        const onChainPromise = chainId
+          ? fetchMarketsFromContract(chainId).catch((err) => {
+              console.error('Error fetching markets from chain:', err);
+              return [] as Market[];
+            })
+          : Promise.resolve<Market[]>([]);
+
+        const safeOnChainPromise = Promise.race([
+          onChainPromise,
+          new Promise<Market[]>((resolve) => setTimeout(() => resolve([]), ONCHAIN_TIMEOUT_MS)),
+        ]);
+
         const [onChainMarkets, mockMarkets] = await Promise.all([
-          chainId ? fetchMarketsFromContract(chainId) : Promise.resolve<Market[]>([]),
+          safeOnChainPromise,
           fetchMarkets(),
         ]);
 
@@ -75,9 +92,13 @@ const App: React.FC = () => {
   );
 
   useEffect(() => {
+    loadMarkets({ showLoader: true });
+  }, [loadMarkets]);
+
+  useEffect(() => {
     const interval = setInterval(() => {
       loadMarkets({ showLoader: false });
-    }, 45000);
+    }, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [loadMarkets]);
 
@@ -138,7 +159,7 @@ const App: React.FC = () => {
         onRefreshMarkets={handleManualRefresh}
         isRefreshing={isLoading || isBackgroundRefreshing}
         lastUpdated={lastUpdated}
-        networkLabel={factoryAddress ? `Chain ID ${chainId}` : 'No supported factory on this network'}
+        networkLabel={networkLabel}
       />
       <main className="container mx-auto px-4 py-8">
         <div className="text-center mb-12">
