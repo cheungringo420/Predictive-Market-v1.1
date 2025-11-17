@@ -448,3 +448,31 @@
 - ✅ Refresh 按鈕與自動輪詢不會阻塞 UI
 
 ---
+
+#### TC-022: Graph / Cache 層驗證（預留）
+**目的：** 一旦整合 The Graph 或快取層後，用於驗證索引資料與前端同步性。
+
+**步驟：**
+1. 啟動或連線至對應的 Graph Subgraph / 快取 API。
+2. 建立或解析一個市場，等待子圖完成索引。
+3. 在應用中的 Debug Console（待開發）觸發 `Validate Indexed Data`。
+4. 比對 API 回傳與鏈上資料、前端呈現。
+
+**預期結果：**
+- ✅ Debug Console 顯示 `Indexed data matches on-chain state`。
+- ✅ 若有落差，會列出差異欄位。
+
+---
+
+#### TC-023: Pool Info 顯示
+**步驟：**
+1. 開啟任一鏈上市場，確認 YES/NO 價格、流動性、池位址顯示。
+2. 點擊 `View Pool` 連結，確認導向對應 Basescan 頁面。
+3. 模擬池儲備變動（在 AMM 上 swap 或 mint），等待自動刷新或手動 Refresh。
+
+**預期結果：**
+- ✅ Modal 中的 Live YES/NO 價格、流動性與實際池狀態一致。
+- ✅ `View Pool` 連結可開啟瀏覽器新分頁，地址正確。
+- ✅ Refresh 按鈕與輪詢更新不阻塞 UI。
+
+---

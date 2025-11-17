@@ -30,3 +30,15 @@ VITE_IPFS_GATEWAY=https://gateway.pinata.cloud/ipfs/
 
 - `VITE_PINATA_JWT`: Optional Pinata JWT used when uploading metadata.
 - `VITE_IPFS_GATEWAY`: Optional gateway for reading IPFS metadata.
+
+## Metadata Storage
+
+市場建立時會將 `question/description/category/endDate/image` 封裝成 JSON：
+1. 若設定 `VITE_PINATA_JWT`，會上傳至 Pinata 並回傳 `ipfs://` URI。
+2. 若無金鑰，則退回 `data:application/json;base64,...` 的本地 URI。
+3. 最後會把 `<metadata:URI>` 附加在問題字串結尾，並由前端在讀取市場時解析。
+
+## Refresh 行為
+- Header 右上角提供 `Refresh` 按鈕，可強制重新抓取鏈上/快取資料。
+- 系統亦會在 `MarketCreated` 事件、或每 45 秒背景自動刷新一次。
+- 若 RPC 延遲超過 8 秒，會自動 fallback 至 mock 市場，避免 UI 卡住。

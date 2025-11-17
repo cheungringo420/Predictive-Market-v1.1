@@ -2,6 +2,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import type { Market, TradeDirection } from '../types';
 import { TradeDirection as TradeDirectionEnum } from '../types';
+import { usePriceData } from '../hooks/usePriceData';
+import { useChainId } from 'wagmi';
+import { usePriceData } from '../hooks/usePriceData';
 
 interface MarketDetailModalProps {
     market: Market | null;
@@ -66,6 +69,17 @@ export const MarketDetailModal: React.FC<MarketDetailModalProps> = ({ market, on
     const [direction, setDirection] = useState<TradeDirectionEnum>(TradeDirectionEnum.YES);
     const [amount, setAmount] = useState<string>('100');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const chainId = useChainId();
+    const isOnChainMarket = !!(market?.id && market.id.toLowerCase().startsWith('0x') && market.id.length === 42);
+    const marketAddress = isOnChainMarket ? (market?.id as `0x${string}`) : undefined;
+    const { priceYes: liveYesPrice, priceNo: liveNoPrice, yesPoolAddress, noPoolAddress, yesLiquidityUSD, noLiquidityUSD } = usePriceData(marketAddress);
+    const yesPriceValue = market ? (typeof liveYesPrice === 'number' ? liveYesPrice : market.yesPrice) : 50;
+    const noPriceValue = market ? (typeof liveNoPrice === 'number' ? liveNoPrice : 100 - yesPriceValue) : 50;
+    const totalLiquidityUSD = typeof yesLiquidityUSD === 'number' || typeof noLiquidityUSD === 'number'
+        ? (yesLiquidityUSD ?? 0) + (noLiquidityUSD ?? 0)
+        : null;
+    const explorerBase = chainId === 84532 ? 'https://sepolia.basescan.org' : 'https://basescan.org';
+    const getExplorerUrl = (address: string) => `${explorerBase}/address/${address}`;
 
     useEffect(() => {
         if (market) {
@@ -98,8 +112,8 @@ export const MarketDetailModal: React.FC<MarketDetailModalProps> = ({ market, on
         if (!market || !amount || parseFloat(amount) <= 0) {
             return { cost: '0.00', fee: '0.00', totalCost: '0.00', potentialPayout: '0.00' };
         }
-        const price = direction === TradeDirectionEnum.YES ? market.yesPrice : (100 - market.yesPrice);
-        const cost = (parseFloat(amount) * price) / 100;
+        const activePrice = direction === TradeDirectionEnum.YES ? yesPriceValue : noPriceValue;
+        const cost = (parseFloat(amount) * activePrice) / 100;
         const fee = cost * (market.feeBps / 10000);
         const totalCost = cost + fee;
         const potentialPayout = parseFloat(amount);
@@ -110,7 +124,7 @@ export const MarketDetailModal: React.FC<MarketDetailModalProps> = ({ market, on
             totalCost: totalCost.toFixed(2),
             potentialPayout: potentialPayout.toFixed(2)
         };
-    }, [amount, direction, market]);
+    }, [amount, direction, market, yesPriceValue, noPriceValue]);
 
     if (!market) return null;
 
@@ -131,7 +145,7 @@ export const MarketDetailModal: React.FC<MarketDetailModalProps> = ({ market, on
     };
 
     const isYes = direction === TradeDirectionEnum.YES;
-    const price = isYes ? market.yesPrice : 100 - market.yesPrice;
+    const price = isYes ? yesPriceValue : noPriceValue;
     const totalLiquidity = market.poolYes + market.poolNo;
 
     return (
@@ -150,17 +164,62 @@ export const MarketDetailModal: React.FC<MarketDetailModalProps> = ({ market, on
                         <PriceHistoryChart market={market} />
                     </div>
 
+                    {isOnChainMarket && (
+                      <div className="bg-brand-bg/40 border border-brand-border rounded-lg p-4 mb-6 space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <p className="text-brand-muted">Live YES</p>
+                            <p className="text-white text-xl font-bold">{yesPriceValue.toFixed(2)}¢</p>
+                          </div>
+                          <div>
+                            <p className="text-brand-muted">Live NO</p>
+                            <p className="text-white text-xl font-bold">{noPriceValue.toFixed(2)}¢</p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs md:text-sm">
+                          <div className="bg-brand-bg/60 rounded-lg p-3">
+                            <p className="text-brand-muted">YES Pool</p>
+                            <p className="text-brand-light font-semibold">{yesLiquidityUSD ? `$${yesLiquidityUSD.toLocaleString(undefined,{ maximumFractionDigits: 0 })}` : '—'}</p>
+                            {yesPoolAddress && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); window.open(getExplorerUrl(yesPoolAddress), '_blank'); }}
+                                className="text-brand-primary text-xs underline mt-1"
+                              >
+                                View Pool
+                              </button>
+                            )}
+                          </div>
+                          <div className="bg-brand-bg/60 rounded-lg p-3">
+                            <p className="text-brand-muted">NO Pool</p>
+                            <p className="text-brand-light font-semibold">{noLiquidityUSD ? `$${noLiquidityUSD.toLocaleString(undefined,{ maximumFractionDigits: 0 })}` : '—'}</p>
+                            {noPoolAddress && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); window.open(getExplorerUrl(noPoolAddress), '_blank'); }}
+                                className="text-brand-primary text-xs underline mt-1"
+                              >
+                                View Pool
+                              </button>
+                            )}
+                          </div>
+                          <div className="bg-brand-bg/60 rounded-lg p-3">
+                            <p className="text-brand-muted">Total Liquidity</p>
+                            <p className="text-brand-light font-semibold">{totalLiquidityUSD ? `$${totalLiquidityUSD.toLocaleString(undefined,{ maximumFractionDigits: 0 })}` : '—'}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center mb-6">
                         <div className="bg-brand-bg/50 p-3 rounded-lg">
-                            <div className="text-xs text-brand-muted">Total Liquidity</div>
-                            <div className="text-lg font-bold text-white">${totalLiquidity.toLocaleString()}</div>
+                            <div className="text-xs text-brand-muted">Total Liquidity (mock)</div>
+                            <div className="text-lg font-bold text-white">${(market.poolYes + market.poolNo).toLocaleString()}</div>
                         </div>
                         <div className="bg-brand-bg/50 p-3 rounded-lg">
-                            <div className="text-xs text-brand-muted">YES Pool</div>
+                            <div className="text-xs text-brand-muted">YES Pool (mock)</div>
                             <div className="text-lg font-bold text-brand-yes">${market.poolYes.toLocaleString()}</div>
                         </div>
                         <div className="bg-brand-bg/50 p-3 rounded-lg">
-                            <div className="text-xs text-brand-muted">NO Pool</div>
+                            <div className="text-xs text-brand-muted">NO Pool (mock)</div>
                             <div className="text-lg font-bold text-brand-no">${market.poolNo.toLocaleString()}</div>
                         </div>
                     </div>
