@@ -7,6 +7,11 @@ import { uniswapV2PairABI, marketABI, getMockUSDCAddress } from '../services/con
 const OUTCOME_DECIMALS = 18;
 const COLLATERAL_DECIMALS = 6;
 
+type PoolStats = {
+  priceInCents: number;
+  liquidityUSD: number;
+};
+
 export function usePriceData(marketAddress: `0x${string}` | undefined) {
   const chainId = useChainId();
   const currentMockUSDCAddress = getMockUSDCAddress(chainId);
@@ -82,12 +87,11 @@ export function usePriceData(marketAddress: `0x${string}` | undefined) {
     query: { enabled: !!noPoolAddress },
   });
 
-  // Calculate price from reserves
-  const calculatePrice = (
+  const calculatePoolStats = (
     reserves: readonly [bigint, bigint, number] | undefined,
     token0Address: `0x${string}` | undefined,
     token1Address: `0x${string}` | undefined
-  ): number | null => {
+  ): PoolStats | null => {
     if (!reserves || !token0Address || !token1Address || !currentMockUSDCAddress) return null;
 
     try {
@@ -111,26 +115,38 @@ export function usePriceData(marketAddress: `0x${string}` | undefined) {
 
       const reserveUSDC_18 = reserveUSDC * 10n ** 12n;
       const priceInCents = (Number(reserveUSDC_18) / Number(reserveOutcome)) * 100;
+      const liquidityUSD = Number(reserveUSDC) / 1_000_000;
 
       if (priceInCents < 0 || priceInCents > 100) {
-        return Math.max(0, Math.min(100, priceInCents));
+        return {
+          priceInCents: Math.max(0, Math.min(100, priceInCents)),
+          liquidityUSD,
+        };
       }
 
-      return priceInCents;
+      return {
+        priceInCents,
+        liquidityUSD,
+      };
     } catch (error) {
       console.error('Error calculating price:', error);
       return null;
     }
   };
 
-  const priceYes = calculatePrice(yesReserves, yesPoolToken0, yesPoolToken1);
-  const priceNo = calculatePrice(noReserves, noPoolToken0, noPoolToken1);
+  const yesStats = calculatePoolStats(yesReserves, yesPoolToken0, yesPoolToken1);
+  const noStats = calculatePoolStats(noReserves, noPoolToken0, noPoolToken1);
+
+  const priceYes = yesStats?.priceInCents ?? (noStats ? 100 - noStats.priceInCents : null);
+  const priceNo = noStats?.priceInCents ?? (priceYes !== null ? 100 - priceYes : null);
 
   return {
     priceYes,
     priceNo,
     yesPoolAddress: yesPoolAddress as `0x${string}` | undefined,
     noPoolAddress: noPoolAddress as `0x${string}` | undefined,
+    yesLiquidityUSD: yesStats?.liquidityUSD ?? null,
+    noLiquidityUSD: noStats?.liquidityUSD ?? null,
   };
 }
 

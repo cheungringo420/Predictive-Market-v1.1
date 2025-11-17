@@ -18,6 +18,18 @@ export interface PriceHistoryPoint {
     yesPrice: number;
 }
 
+export interface MarketMetadata {
+  question: string;
+  description?: string;
+  category?: MarketCategory;
+  endDate?: string;
+  imageUrl?: string;
+  createdBy?: string;
+  chainId?: number;
+  createdAt?: string;
+  metadataUri?: string;
+}
+
 export interface Market {
   id: string;
   title: string;
@@ -31,6 +43,8 @@ export interface Market {
   poolNo: number; // in USDT
   priceHistory: PriceHistoryPoint[];
   feeBps: number; // Fee in basis points (e.g., 100 = 1%)
+  metadataUri?: string;
+  source?: 'mock' | 'onchain';
 }
 
 export enum TradeDirection {

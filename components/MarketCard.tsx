@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { Market, TradeDirection } from '../types';
+import { usePriceData } from '../hooks/usePriceData';
 import { MarketOutcome, TradeDirection as TradeDirectionEnum } from '../types';
 
 interface MarketCardProps {
@@ -56,7 +57,7 @@ const OutcomeButton: React.FC<{
             className={`${baseClasses} ${stateClasses} ${selectionClasses}`}
         >
             <span className="text-xs text-brand-muted">{direction}</span>
-            <span className={`text-2xl font-bold ${color}`}>{price.toString().padStart(2, '0')}¢</span>
+            <span className={`text-2xl font-bold ${color}`}>{price.toFixed(2)}¢</span>
         </button>
     );
 };
@@ -65,7 +66,14 @@ export const MarketCard: React.FC<MarketCardProps> = ({ market, onTrade, onPlace
     const [isTrading, setIsTrading] = useState(false);
     const [selectedDirection, setSelectedDirection] = useState<TradeDirection | null>(null);
     const isResolved = market.outcome !== MarketOutcome.PENDING;
-    const noPrice = 100 - market.yesPrice;
+    const isOnChainMarket = market.id.toLowerCase().startsWith('0x') && market.id.length === 42;
+    const marketAddress = isOnChainMarket ? (market.id as `0x${string}`) : undefined;
+    const { priceYes: liveYesPrice, priceNo: liveNoPrice, yesLiquidityUSD, noLiquidityUSD } = usePriceData(marketAddress);
+    const yesPriceValue = typeof liveYesPrice === 'number' ? liveYesPrice : market.yesPrice;
+    const noPriceValue = typeof liveNoPrice === 'number' ? liveNoPrice : 100 - yesPriceValue;
+    const totalLiquidity = typeof yesLiquidityUSD === 'number' || typeof noLiquidityUSD === 'number'
+        ? (yesLiquidityUSD ?? 0) + (noLiquidityUSD ?? 0)
+        : null;
 
     const handleSelectDirection = (e: React.MouseEvent, direction: TradeDirection) => {
         e.stopPropagation(); // Prevent modal from opening
@@ -110,9 +118,35 @@ export const MarketCard: React.FC<MarketCardProps> = ({ market, onTrade, onPlace
 
             <div className="p-5 flex flex-col flex-grow">
                 <h3 className="text-lg font-bold text-white mb-2 flex-grow cursor-pointer">{market.title}</h3>
-                <p className="text-sm text-brand-muted mb-4 cursor-pointer">
+                <p className="text-sm text-brand-muted mb-2 cursor-pointer">
                   Ends: {market.endsAt.toLocaleDateString()}
                 </p>
+                {market.description && (
+                  <p className="text-sm text-brand-muted mb-4 overflow-hidden text-ellipsis">
+                    {market.description}
+                  </p>
+                )}
+
+                {isOnChainMarket && !isResolved && (
+                  <div className="bg-brand-bg/40 border border-brand-border rounded-lg p-3 mb-4 grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-brand-muted">Live YES</p>
+                      <p className="text-white font-semibold">{yesPriceValue.toFixed(2)}¢</p>
+                    </div>
+                    <div>
+                      <p className="text-brand-muted">Live NO</p>
+                      <p className="text-white font-semibold">{noPriceValue.toFixed(2)}¢</p>
+                    </div>
+                    <div>
+                      <p className="text-brand-muted">Liquidity</p>
+                      <p className="text-brand-light font-semibold">{totalLiquidity ? `$${totalLiquidity.toLocaleString(undefined,{ maximumFractionDigits: 0 })}` : '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-brand-muted">Pool</p>
+                      <p className="text-brand-light text-xs break-all">{marketAddress?.slice(0, 6)}...{marketAddress?.slice(-4)}</p>
+                    </div>
+                  </div>
+                )}
 
                 {isResolved ? (
                     <ResolutionBanner outcome={market.outcome} />
@@ -120,14 +154,14 @@ export const MarketCard: React.FC<MarketCardProps> = ({ market, onTrade, onPlace
                     <>
                         <div className="grid grid-cols-2 gap-3 mb-5">
                             <OutcomeButton 
-                                price={market.yesPrice} 
+                                price={yesPriceValue} 
                                 direction="YES" 
                                 onClick={(e) => handleSelectDirection(e, TradeDirectionEnum.YES)}
                                 disabled={!isConnected || isTrading}
                                 isSelected={selectedDirection === TradeDirectionEnum.YES}
                             />
                             <OutcomeButton 
-                                price={noPrice} 
+                                price={noPriceValue} 
                                 direction="NO" 
                                 onClick={(e) => handleSelectDirection(e, TradeDirectionEnum.NO)}
                                 disabled={!isConnected || isTrading}

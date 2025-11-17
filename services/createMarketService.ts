@@ -1,8 +1,12 @@
 // services/createMarketService.ts
-// Service to create new markets using MarketFactoryV2 contract
+// Service helpers for market creation workflow
 
-import { getFactoryAddress } from './contracts/contractInfo';
 import type { MarketCategory } from '../types';
+import {
+  buildMetadataPayload,
+  uploadMarketMetadata,
+  encodeQuestionWithMetadata,
+} from './metadataService';
 
 export interface CreateMarketParams {
   question: string;
@@ -12,9 +16,11 @@ export interface CreateMarketParams {
   imageUrl?: string;
 }
 
-/**
- * Validates market creation parameters
- */
+export interface QuestionPayloadResult {
+  payload: string;
+  metadataUri?: string;
+}
+
 export const validateMarketParams = (params: CreateMarketParams): { valid: boolean; error?: string } => {
   if (!params.question || params.question.trim().length === 0) {
     return { valid: false, error: 'Market question is required' };
@@ -31,14 +37,20 @@ export const validateMarketParams = (params: CreateMarketParams): { valid: boole
   return { valid: true };
 };
 
-/**
- * Formats market question for blockchain storage
- * Combines question and description if provided
- */
-export const formatMarketQuestion = (params: CreateMarketParams): string => {
-  if (params.description && params.description.trim().length > 0) {
-    return `${params.question}\n\n${params.description}`;
-  }
-  return params.question;
-};
+export const buildQuestionPayload = async (
+  params: CreateMarketParams,
+  options: { creator?: string; chainId?: number }
+): Promise<QuestionPayloadResult> => {
+  const metadataPayload = buildMetadataPayload(params, options.creator, options.chainId);
+  const metadataUri = await uploadMarketMetadata(metadataPayload);
+  const payload = encodeQuestionWithMetadata(
+    params.question,
+    params.description,
+    metadataUri
+  );
 
+  return {
+    payload,
+    metadataUri,
+  };
+};

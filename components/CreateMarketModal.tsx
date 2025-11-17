@@ -3,7 +3,7 @@ import { useWriteContract, useWaitForTransactionReceipt, useAccount, useChainId 
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import { getFactoryAddress, factoryABI } from '../services/contracts/contractInfo';
-import { validateMarketParams, formatMarketQuestion, type CreateMarketParams } from '../services/createMarketService';
+import { validateMarketParams, buildQuestionPayload, type CreateMarketParams } from '../services/createMarketService';
 import { MarketCategory } from '../types';
 
 interface CreateMarketModalProps {
@@ -65,7 +65,7 @@ export const CreateMarketModal: React.FC<CreateMarketModalProps> = ({ isOpen, on
       
       // Call callback if provided (only once)
       if (onMarketCreated) {
-        onMarketCreated(hash);
+        onMarketCreated();
       }
       
       // Close modal immediately after showing success
@@ -115,7 +115,7 @@ export const CreateMarketModal: React.FC<CreateMarketModalProps> = ({ isOpen, on
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, isPending, isConfirming, onClose]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!isConnected) {
@@ -151,16 +151,22 @@ export const CreateMarketModal: React.FC<CreateMarketModalProps> = ({ isOpen, on
       return;
     }
 
-    // Format question for blockchain (combine question and description)
-    const marketQuestion = formatMarketQuestion(params);
+    try {
+      const { payload } = await buildQuestionPayload(params, { creator: address, chainId });
 
-    // Call smart contract
-    writeContract({
-      address: factoryAddress as `0x${string}`,
-      abi: factoryABI,
-      functionName: 'createMarket',
-      args: [marketQuestion],
-    });
+      writeContract({
+        address: factoryAddress as `0x${string}`,
+        abi: factoryABI,
+        functionName: 'createMarket',
+        args: [payload],
+      });
+    } catch (uploadError) {
+      console.error('Failed to prepare market metadata:', uploadError);
+      toast.error('Failed to prepare metadata. Please try again.', {
+        duration: 3000,
+        style: { background: '#ef4444', color: '#fff' }
+      });
+    }
   };
 
   if (!isOpen) return null;

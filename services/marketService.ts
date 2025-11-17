@@ -18,6 +18,7 @@ const reviveDates = (market: any): Market => {
       ...p,
       date: new Date(p.date),
     })),
+    source: market.source || 'mock',
   };
 };
 

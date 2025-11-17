@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAccount, useChainId, useWatchContractEvent } from 'wagmi';
 import { Header } from './components/Header';
 import { MarketList } from './components/MarketList';
@@ -15,6 +15,9 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
   const [isCreateMarketOpen, setIsCreateMarketOpen] = useState<boolean>(false);
+  const [isBackgroundRefreshing, setIsBackgroundRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const backgroundRequests = useRef(0);
 
   const { address: walletAddress, isConnected } = useAccount();
   const chainId = useChainId();
@@ -22,8 +25,13 @@ const App: React.FC = () => {
 
   const loadMarkets = useCallback(
     async ({ showLoader = true, delayMs = 0 }: { showLoader?: boolean; delayMs?: number } = {}) => {
-      if (showLoader) setIsLoading(true);
-      setError(null);
+      if (showLoader) {
+        setIsLoading(true);
+        setError(null);
+      } else {
+        backgroundRequests.current += 1;
+        setIsBackgroundRefreshing(true);
+      }
 
       try {
         if (delayMs) {
@@ -45,21 +53,32 @@ const App: React.FC = () => {
           onChainMarkets.length > 0 ? [...onChainMarkets, ...fallbackMarkets] : fallbackMarkets;
 
         setMarkets(combinedMarkets);
+        setLastUpdated(new Date());
       } catch (err) {
         console.error('Error loading markets:', err);
-        setError('Failed to load markets. Please try again later.');
         if (showLoader) {
+          setError('Failed to load markets. Please try again later.');
           setMarkets([]);
         }
       } finally {
-        if (showLoader) setIsLoading(false);
+        if (showLoader) {
+          setIsLoading(false);
+        } else {
+          backgroundRequests.current = Math.max(0, backgroundRequests.current - 1);
+          if (backgroundRequests.current === 0) {
+            setIsBackgroundRefreshing(false);
+          }
+        }
       }
     },
     [chainId]
   );
 
   useEffect(() => {
-    loadMarkets({ showLoader: true });
+    const interval = setInterval(() => {
+      loadMarkets({ showLoader: false });
+    }, 45000);
+    return () => clearInterval(interval);
   }, [loadMarkets]);
 
   useWatchContractEvent({
@@ -114,26 +133,17 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-brand-bg text-brand-light font-sans">
-      <Header onCreateMarketClick={() => setIsCreateMarketOpen(true)} />
+      <Header
+        onCreateMarketClick={() => setIsCreateMarketOpen(true)}
+        onRefreshMarkets={handleManualRefresh}
+        isRefreshing={isLoading || isBackgroundRefreshing}
+        lastUpdated={lastUpdated}
+        networkLabel={factoryAddress ? `Chain ID ${chainId}` : 'No supported factory on this network'}
+      />
       <main className="container mx-auto px-4 py-8">
         <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold text-white">Prediction Markets</h1>
             <p className="text-lg text-brand-muted mt-2">Trade on the outcome of real-world events.</p>
-        </div>
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
-          <div className="text-sm text-brand-muted">
-            Network:{' '}
-            <span className="text-white font-semibold">
-              {factoryAddress ? `Chain ID ${chainId}` : 'No supported factory on this network'}
-            </span>
-          </div>
-          <button
-            onClick={handleManualRefresh}
-            disabled={isLoading}
-            className="px-4 py-2 bg-brand-border text-white rounded-lg hover:bg-brand-border/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-          >
-            {isLoading ? 'Refreshing...' : 'Refresh Markets'}
-          </button>
         </div>
         {renderContent()}
       </main>

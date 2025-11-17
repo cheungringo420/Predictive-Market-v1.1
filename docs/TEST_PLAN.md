@@ -421,3 +421,30 @@
 - 截图/日志
 - 浏览器控制台错误
 
+
+#### TC-020: Metadata Upload & Retrieval
+**步驟：**
+1. 建立市場時填寫描述、分類、圖片與結束日期
+2. 提供合法的 Pinata JWT（或使用預設 data URI 模式）
+3. 交易完成後，於瀏覽器控制台檢查 Question Payload，確認含有 `<metadata:...>` 指標
+4. 在首頁確認新市場顯示正確的描述、圖片與分類
+
+**預期結果：**
+- ✅ 問題字串末尾包含 metadata URI
+- ✅ 市場卡片顯示正確描述、分類、圖片
+- ✅ `fetchMarketsFromContract` 能解析 metadata 並呈現
+
+---
+
+#### TC-021: 實時價格與流動性顯示
+**步驟：**
+1. 連線 Base Sepolia，打開任一鏈上市場
+2. 在 Uniswap 內對該市場池子執行 swap/mint，觀察前端
+3. 點擊 `Refresh` 或等待自動刷新
+
+**預期結果：**
+- ✅ YES/NO 價格顯示與池子狀態同步變化
+- ✅ 流動性（USD）總額與池子儲備一致
+- ✅ Refresh 按鈕與自動輪詢不會阻塞 UI
+
+---
