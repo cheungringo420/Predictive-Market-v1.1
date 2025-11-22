@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { toast } from 'react-hot-toast';
 import { useAccount, useChainId, useWatchContractEvent } from 'wagmi';
 import { Header } from './components/Header';
 import { MarketList } from './components/MarketList';
@@ -45,9 +46,9 @@ const App: React.FC = () => {
 
         const onChainPromise = chainId
           ? fetchMarketsFromContract(chainId).catch((err) => {
-              console.error('Error fetching markets from chain:', err);
-              return [] as Market[];
-            })
+            console.error('Error fetching markets from chain:', err);
+            return [] as Market[];
+          })
           : Promise.resolve<Market[]>([]);
 
         const safeOnChainPromise = Promise.race([
@@ -106,7 +107,7 @@ const App: React.FC = () => {
     address: factoryAddress as `0x${string}` | undefined,
     abi: factoryABI,
     eventName: 'MarketCreated',
-    listener: () => loadMarkets({ showLoader: false, delayMs: 1500 }),
+    onLogs: () => loadMarkets({ showLoader: false, delayMs: 1500 }),
     enabled: !!factoryAddress,
   });
 
@@ -120,17 +121,17 @@ const App: React.FC = () => {
 
   const handlePlaceTrade = async (marketId: string, direction: TradeDirection, amount: number) => {
     try {
-        const updatedMarket = await placeTrade(marketId, direction, amount);
-        setMarkets(prevMarkets => 
-            prevMarkets.map(m => m.id === marketId ? updatedMarket : m)
-        );
-        if (selectedMarket?.id === marketId) {
-            setSelectedMarket(updatedMarket);
-        }
-    } catch(err) {
-        console.error("Trade failed:", err);
-        alert("There was an error processing your trade.");
-        throw err;
+      const updatedMarket = await placeTrade(marketId, direction, amount);
+      setMarkets(prevMarkets =>
+        prevMarkets.map(m => m.id === marketId ? updatedMarket : m)
+      );
+      if (selectedMarket?.id === marketId) {
+        setSelectedMarket(updatedMarket);
+      }
+    } catch (err) {
+      console.error("Trade failed:", err);
+      toast.error("There was an error processing your trade.");
+      throw err;
     }
   };
 
@@ -163,13 +164,13 @@ const App: React.FC = () => {
       />
       <main className="container mx-auto px-4 py-8">
         <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold text-white">Prediction Markets</h1>
-            <p className="text-lg text-brand-muted mt-2">Trade on the outcome of real-world events.</p>
+          <h1 className="text-4xl md:text-5xl font-bold text-white">Prediction Markets</h1>
+          <p className="text-lg text-brand-muted mt-2">Trade on the outcome of real-world events.</p>
         </div>
         {renderContent()}
       </main>
       <MarketDetailModal
-        market={selectedMarket} 
+        market={selectedMarket}
         onClose={handleCloseMarketModal}
         isConnected={isConnected}
         onPlaceTrade={handlePlaceTrade}
@@ -179,10 +180,10 @@ const App: React.FC = () => {
         onClose={() => setIsCreateMarketOpen(false)}
         onMarketCreated={handleMarketCreated}
       />
-       <footer className="text-center py-6 border-t border-brand-border mt-12">
-          <p className="text-brand-muted">Predictive Horizon - Capstone Project Prototype</p>
-          <p className="text-xs text-gray-500 mt-1">This is a conceptual prototype. Not for real financial transactions.</p>
-       </footer>
+      <footer className="text-center py-6 border-t border-brand-border mt-12">
+        <p className="text-brand-muted">Predictive Horizon - Capstone Project Prototype</p>
+        <p className="text-xs text-gray-500 mt-1">This is a conceptual prototype. Not for real financial transactions.</p>
+      </footer>
     </div>
   );
 };

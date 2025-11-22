@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { toast } from 'react-hot-toast';
 import type { Market, TradeDirection } from '../types';
 import { TradeDirection as TradeDirectionEnum } from '../types';
 import { usePriceData } from '../hooks/usePriceData';
 import { useChainId } from 'wagmi';
-import { usePriceData } from '../hooks/usePriceData';
 
 interface MarketDetailModalProps {
     market: Market | null;
@@ -13,13 +13,13 @@ interface MarketDetailModalProps {
     onPlaceTrade: (marketId: string, direction: TradeDirection, amount: number) => Promise<void>;
 }
 
-const CloseIcon: React.FC<{className: string}> = ({className}) => (
+const CloseIcon: React.FC<{ className: string }> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
     </svg>
 );
 
-const PriceHistoryChart: React.FC<{market: Market}> = ({market}) => {
+const PriceHistoryChart: React.FC<{ market: Market }> = ({ market }) => {
     const { priceHistory, endsAt } = market;
     const width = 500;
     const height = 150;
@@ -31,7 +31,7 @@ const PriceHistoryChart: React.FC<{market: Market}> = ({market}) => {
 
     const startDate = priceHistory[0].date;
     const timeDomain = endsAt.getTime() - startDate.getTime();
-    
+
     const points = priceHistory.map(p => {
         const x = padding.left + ((p.date.getTime() - startDate.getTime()) / timeDomain) * (width - padding.left - padding.right);
         const y = padding.top + ((100 - p.yesPrice) / 100) * (height - padding.top - padding.bottom);
@@ -49,10 +49,10 @@ const PriceHistoryChart: React.FC<{market: Market}> = ({market}) => {
                 <text x={padding.left - 8} y={padding.top + 5} textAnchor="end" className="text-xs fill-brand-muted">100¢</text>
                 <text x={padding.left - 8} y={height / 2} textAnchor="end" className="text-xs fill-brand-muted">50¢</text>
                 <text x={padding.left - 8} y={height - padding.bottom} textAnchor="end" className="text-xs fill-brand-muted">0¢</text>
-                
+
                 {/* Guideline */}
-                <line x1={padding.left} y1={height/2} x2={width - padding.right} y2={height/2} className="stroke-brand-border" strokeDasharray="2,2"/>
-                
+                <line x1={padding.left} y1={height / 2} x2={width - padding.right} y2={height / 2} className="stroke-brand-border" strokeDasharray="2,2" />
+
                 {/* Price Line */}
                 <polyline
                     fill="none"
@@ -107,7 +107,7 @@ export const MarketDetailModal: React.FC<MarketDetailModalProps> = ({ market, on
             document.body.style.overflow = 'unset';
         };
     }, [market, onClose]);
-    
+
     const tradeDetails = useMemo(() => {
         if (!market || !amount || parseFloat(amount) <= 0) {
             return { cost: '0.00', fee: '0.00', totalCost: '0.00', potentialPayout: '0.00' };
@@ -130,7 +130,7 @@ export const MarketDetailModal: React.FC<MarketDetailModalProps> = ({ market, on
 
     const handleSubmitTrade = async () => {
         if (!isConnected || !market) {
-            alert("Please connect your wallet to submit a trade.");
+            toast.error("Please connect your wallet to submit a trade.");
             return;
         }
         setIsSubmitting(true);
@@ -158,55 +158,55 @@ export const MarketDetailModal: React.FC<MarketDetailModalProps> = ({ market, on
                 <div className="p-6">
                     <h2 className="text-xl lg:text-2xl font-bold text-white mb-2">{market.title}</h2>
                     <p className="text-sm text-brand-muted mb-6">{market.description}</p>
-                    
+
                     <div className="bg-brand-bg/50 p-4 rounded-lg mb-6">
                         <h3 className="text-sm font-bold text-brand-light mb-2">Price History</h3>
                         <PriceHistoryChart market={market} />
                     </div>
 
                     {isOnChainMarket && (
-                      <div className="bg-brand-bg/40 border border-brand-border rounded-lg p-4 mb-6 space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <p className="text-brand-muted">Live YES</p>
-                            <p className="text-white text-xl font-bold">{yesPriceValue.toFixed(2)}¢</p>
-                          </div>
-                          <div>
-                            <p className="text-brand-muted">Live NO</p>
-                            <p className="text-white text-xl font-bold">{noPriceValue.toFixed(2)}¢</p>
-                          </div>
+                        <div className="bg-brand-bg/40 border border-brand-border rounded-lg p-4 mb-6 space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <p className="text-brand-muted">Live YES</p>
+                                    <p className="text-white text-xl font-bold">{yesPriceValue.toFixed(2)}¢</p>
+                                </div>
+                                <div>
+                                    <p className="text-brand-muted">Live NO</p>
+                                    <p className="text-white text-xl font-bold">{noPriceValue.toFixed(2)}¢</p>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs md:text-sm">
+                                <div className="bg-brand-bg/60 rounded-lg p-3">
+                                    <p className="text-brand-muted">YES Pool</p>
+                                    <p className="text-brand-light font-semibold">{yesLiquidityUSD ? `$${yesLiquidityUSD.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : '—'}</p>
+                                    {yesPoolAddress && (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); window.open(getExplorerUrl(yesPoolAddress), '_blank'); }}
+                                            className="text-brand-primary text-xs underline mt-1"
+                                        >
+                                            View Pool
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="bg-brand-bg/60 rounded-lg p-3">
+                                    <p className="text-brand-muted">NO Pool</p>
+                                    <p className="text-brand-light font-semibold">{noLiquidityUSD ? `$${noLiquidityUSD.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : '—'}</p>
+                                    {noPoolAddress && (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); window.open(getExplorerUrl(noPoolAddress), '_blank'); }}
+                                            className="text-brand-primary text-xs underline mt-1"
+                                        >
+                                            View Pool
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="bg-brand-bg/60 rounded-lg p-3">
+                                    <p className="text-brand-muted">Total Liquidity</p>
+                                    <p className="text-brand-light font-semibold">{totalLiquidityUSD ? `$${totalLiquidityUSD.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : '—'}</p>
+                                </div>
+                            </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs md:text-sm">
-                          <div className="bg-brand-bg/60 rounded-lg p-3">
-                            <p className="text-brand-muted">YES Pool</p>
-                            <p className="text-brand-light font-semibold">{yesLiquidityUSD ? `$${yesLiquidityUSD.toLocaleString(undefined,{ maximumFractionDigits: 0 })}` : '—'}</p>
-                            {yesPoolAddress && (
-                              <button
-                                onClick={(e) => { e.stopPropagation(); window.open(getExplorerUrl(yesPoolAddress), '_blank'); }}
-                                className="text-brand-primary text-xs underline mt-1"
-                              >
-                                View Pool
-                              </button>
-                            )}
-                          </div>
-                          <div className="bg-brand-bg/60 rounded-lg p-3">
-                            <p className="text-brand-muted">NO Pool</p>
-                            <p className="text-brand-light font-semibold">{noLiquidityUSD ? `$${noLiquidityUSD.toLocaleString(undefined,{ maximumFractionDigits: 0 })}` : '—'}</p>
-                            {noPoolAddress && (
-                              <button
-                                onClick={(e) => { e.stopPropagation(); window.open(getExplorerUrl(noPoolAddress), '_blank'); }}
-                                className="text-brand-primary text-xs underline mt-1"
-                              >
-                                View Pool
-                              </button>
-                            )}
-                          </div>
-                          <div className="bg-brand-bg/60 rounded-lg p-3">
-                            <p className="text-brand-muted">Total Liquidity</p>
-                            <p className="text-brand-light font-semibold">{totalLiquidityUSD ? `$${totalLiquidityUSD.toLocaleString(undefined,{ maximumFractionDigits: 0 })}` : '—'}</p>
-                          </div>
-                        </div>
-                      </div>
                     )}
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center mb-6">
@@ -226,7 +226,7 @@ export const MarketDetailModal: React.FC<MarketDetailModalProps> = ({ market, on
 
 
                     <div className="bg-brand-bg p-6 rounded-lg">
-                         <h3 className="text-lg font-bold text-white mb-4 text-center">Place Your Trade</h3>
+                        <h3 className="text-lg font-bold text-white mb-4 text-center">Place Your Trade</h3>
                         <div className="grid grid-cols-2 gap-3 mb-4">
                             <button onClick={() => setDirection(TradeDirectionEnum.YES)} className={`py-3 rounded-lg font-bold text-lg transition-colors ${isYes ? 'bg-brand-yes text-white' : 'bg-brand-border hover:bg-brand-yes/20'}`}>
                                 Buy YES ({market.yesPrice}¢)
@@ -247,17 +247,17 @@ export const MarketDetailModal: React.FC<MarketDetailModalProps> = ({ market, on
                                 placeholder="e.g., 100"
                             />
                         </div>
-                        
+
                         <div className="bg-brand-bg border border-brand-border/50 p-4 rounded-lg space-y-2 text-sm">
                             <div className="flex justify-between">
                                 <span className="text-brand-muted">Price per share:</span>
                                 <span className="text-white font-mono">{price}¢</span>
                             </div>
-                             <div className="flex justify-between">
+                            <div className="flex justify-between">
                                 <span className="text-brand-muted">Cost:</span>
                                 <span className="text-white font-mono">{tradeDetails.cost} USDT</span>
                             </div>
-                             <div className="flex justify-between">
+                            <div className="flex justify-between">
                                 <span className="text-brand-muted">Trading Fee ({market.feeBps / 100}%):</span>
                                 <span className="text-white font-mono">{tradeDetails.fee} USDT</span>
                             </div>
@@ -265,7 +265,7 @@ export const MarketDetailModal: React.FC<MarketDetailModalProps> = ({ market, on
                                 <span className="text-brand-light font-bold">Total Cost:</span>
                                 <span className="text-white font-mono font-bold">{tradeDetails.totalCost} USDT</span>
                             </div>
-                             <div className="flex justify-between">
+                            <div className="flex justify-between">
                                 <span className="text-brand-muted">Potential Payout:</span>
                                 <span className="text-white font-mono">{tradeDetails.potentialPayout} USDT</span>
                             </div>

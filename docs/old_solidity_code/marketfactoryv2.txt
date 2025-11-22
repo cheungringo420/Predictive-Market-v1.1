@@ -1,0 +1,77 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+// Import the MarketV2 contract so we can deploy it
+import "./MarketV2.sol";
+
+/**
+ * @title MarketFactoryV2
+ * @notice Deploys new MarketV2 contracts and tracks them.
+ */
+contract MarketFactoryV2 {
+
+    // --- State Variables ---
+
+    // The single, permanent address of the mUSDC collateral token
+    address public immutable collateralToken;
+
+    // The list of all deployed markets
+    address[] public allMarkets;
+
+    // --- Events ---
+    event MarketCreated(
+        address indexed marketAddress,
+        string question,
+        address indexed creator
+    );
+
+    // --- Functions ---
+
+    /**
+     * @notice When we deploy the factory, we give it the
+     * address of the deployed MockUSDC.sol
+     * @param _collateralToken The address of the deployed MockUSDC.
+     */
+    constructor(address _collateralToken) {
+        collateralToken = _collateralToken;
+    }
+
+    /**
+     * @notice Creates and deploys a new MarketV2 contract.
+     * @param _question The question for the new market.
+     */
+    function createMarket(string memory _question) public returns (address) {
+        
+        // 1. Deploy a new MarketV2 contract.
+        // We pass it the question, the creator (msg.sender),
+        // and the collateral address we stored in the constructor.
+        MarketV2 newMarket = new MarketV2(
+            _question,
+            msg.sender,
+            collateralToken 
+        );
+
+        // 2. Save the address of the newly deployed contract
+        address newMarketAddress = address(newMarket);
+        allMarkets.push(newMarketAddress);
+
+        // 3. Emit an event so our frontend can listen for this
+        emit MarketCreated(newMarketAddress, _question, msg.sender);
+
+        return newMarketAddress;
+    }
+
+    /**
+     * @notice Gets the list of all created market addresses.
+     */
+    function getAllMarkets() public view returns (address[] memory) {
+        return allMarkets;
+    }
+
+    /**
+     * @notice Gets the number of markets created.
+     */
+    function marketCount() public view returns (uint) {
+        return allMarkets.length;
+    }
+}
