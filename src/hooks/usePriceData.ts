@@ -1,152 +1,109 @@
 // hooks/usePriceData.ts
-// Custom hook to fetch pool addresses, reserves, and calculate prices from AMM
+// Custom hook to fetch prices and reserves from Native AMM (MarketV3)
 
-import { useReadContract, useChainId } from 'wagmi';
-import { uniswapV2PairABI, marketABI, getMockUSDCAddress } from '../services/contracts/contractInfo';
-
-const OUTCOME_DECIMALS = 18;
-const COLLATERAL_DECIMALS = 6;
-
-type PoolStats = {
-  priceInCents: number;
-  liquidityUSD: number;
-};
+import { useReadContract, useWatchContractEvent } from 'wagmi';
+import { MARKET_ABI } from '../services/contracts/contractInfo';
 
 export function usePriceData(marketAddress: `0x${string}` | undefined) {
-  const chainId = useChainId();
-  const currentMockUSDCAddress = getMockUSDCAddress(chainId);
-
-  // Fetch pool addresses
-  const { data: yesPoolAddress } = useReadContract({
+  // Fetch YES Price
+  const { data: yesPriceRaw, refetch: refetchYesPrice } = useReadContract({
     address: marketAddress,
-    abi: marketABI,
-    functionName: 'yesPoolAddress',
+    abi: MARKET_ABI,
+    functionName: 'getPrice',
+    args: [0], // 0 for YES
     query: {
       enabled: !!marketAddress,
+      refetchInterval: 5000,
     },
   });
 
-  const { data: noPoolAddress } = useReadContract({
+  // Fetch NO Price
+  const { data: noPriceRaw, refetch: refetchNoPrice } = useReadContract({
     address: marketAddress,
-    abi: marketABI,
-    functionName: 'noPoolAddress',
+    abi: MARKET_ABI,
+    functionName: 'getPrice',
+    args: [1], // 1 for NO
     query: {
       enabled: !!marketAddress,
+      refetchInterval: 5000,
     },
   });
 
-  // Fetch reserves
-  const { data: yesReserves } = useReadContract({
-    address: yesPoolAddress as `0x${string}` | undefined,
-    abi: uniswapV2PairABI,
-    functionName: 'getReserves',
+  // Fetch YES Reserves
+  const { data: yesReserves, refetch: refetchYesReserves } = useReadContract({
+    address: marketAddress,
+    abi: MARKET_ABI,
+    functionName: 'yesReserves',
     query: {
-      enabled: !!yesPoolAddress && yesPoolAddress !== '0x0000000000000000000000000000000000000000',
-      refetchInterval: 3000,
-      watch: true,
+      enabled: !!marketAddress,
+      refetchInterval: 5000,
     },
   });
 
-  const { data: noReserves } = useReadContract({
-    address: noPoolAddress as `0x${string}` | undefined,
-    abi: uniswapV2PairABI,
-    functionName: 'getReserves',
+  // Fetch NO Reserves
+  const { data: noReserves, refetch: refetchNoReserves } = useReadContract({
+    address: marketAddress,
+    abi: MARKET_ABI,
+    functionName: 'noReserves',
     query: {
-      enabled: !!noPoolAddress && noPoolAddress !== '0x0000000000000000000000000000000000000000',
-      refetchInterval: 3000,
-      watch: true,
+      enabled: !!marketAddress,
+      refetchInterval: 5000,
     },
   });
 
-  // Fetch token addresses
-  const { data: yesPoolToken0 } = useReadContract({
-    address: yesPoolAddress as `0x${string}` | undefined,
-    abi: uniswapV2PairABI,
-    functionName: 'token0',
-    query: { enabled: !!yesPoolAddress },
-  });
-
-  const { data: yesPoolToken1 } = useReadContract({
-    address: yesPoolAddress as `0x${string}` | undefined,
-    abi: uniswapV2PairABI,
-    functionName: 'token1',
-    query: { enabled: !!yesPoolAddress },
-  });
-
-  const { data: noPoolToken0 } = useReadContract({
-    address: noPoolAddress as `0x${string}` | undefined,
-    abi: uniswapV2PairABI,
-    functionName: 'token0',
-    query: { enabled: !!noPoolAddress },
-  });
-
-  const { data: noPoolToken1 } = useReadContract({
-    address: noPoolAddress as `0x${string}` | undefined,
-    abi: uniswapV2PairABI,
-    functionName: 'token1',
-    query: { enabled: !!noPoolAddress },
-  });
-
-  const calculatePoolStats = (
-    reserves: readonly [bigint, bigint, number] | undefined,
-    token0Address: `0x${string}` | undefined,
-    token1Address: `0x${string}` | undefined
-  ): PoolStats | null => {
-    if (!reserves || !token0Address || !token1Address || !currentMockUSDCAddress) return null;
-
-    try {
-      const [reserve0, reserve1] = reserves;
-      const isToken0USDC = token0Address.toLowerCase() === currentMockUSDCAddress.toLowerCase();
-      const isToken1USDC = token1Address.toLowerCase() === currentMockUSDCAddress.toLowerCase();
-
-      let reserveUSDC: bigint, reserveOutcome: bigint;
-
-      if (isToken0USDC) {
-        reserveUSDC = BigInt(reserve0.toString());
-        reserveOutcome = BigInt(reserve1.toString());
-      } else if (isToken1USDC) {
-        reserveUSDC = BigInt(reserve1.toString());
-        reserveOutcome = BigInt(reserve0.toString());
-      } else {
-        return null;
-      }
-
-      if (reserveOutcome === 0n || reserveUSDC === 0n) return null;
-
-      const reserveUSDC_18 = reserveUSDC * 10n ** 12n;
-      const priceInCents = (Number(reserveUSDC_18) / Number(reserveOutcome)) * 100;
-      const liquidityUSD = Number(reserveUSDC) / 1_000_000;
-
-      if (priceInCents < 0 || priceInCents > 100) {
-        return {
-          priceInCents: Math.max(0, Math.min(100, priceInCents)),
-          liquidityUSD,
-        };
-      }
-
-      return {
-        priceInCents,
-        liquidityUSD,
-      };
-    } catch (error) {
-      console.error('Error calculating price:', error);
-      return null;
-    }
+  const refetch = () => {
+    refetchYesPrice();
+    refetchNoPrice();
+    refetchYesReserves();
+    refetchNoReserves();
   };
 
-  const yesStats = calculatePoolStats(yesReserves, yesPoolToken0, yesPoolToken1);
-  const noStats = calculatePoolStats(noReserves, noPoolToken0, noPoolToken1);
+  // Watch for Trade events to update prices immediately
+  useWatchContractEvent({
+    address: marketAddress,
+    abi: MARKET_ABI,
+    eventName: 'Trade',
+    onLogs: () => {
+      refetch();
+    },
+    enabled: !!marketAddress,
+  });
 
-  const priceYes = yesStats?.priceInCents ?? (noStats ? 100 - noStats.priceInCents : null);
-  const priceNo = noStats?.priceInCents ?? (priceYes !== null ? 100 - priceYes : null);
+  const priceYes = typeof yesPriceRaw === 'bigint' ? Number(yesPriceRaw) : null;
+  const priceNo = typeof noPriceRaw === 'bigint' ? Number(noPriceRaw) : null;
+
+  // Convert reserves to USD (assuming 18 decimals for internal accounting, but input was USDC 6 decimals scaled up)
+  // Actually, reserves are in 18 decimals.
+  // To get "Liquidity USD", we can approximate it.
+  // In CPMM, total liquidity value is roughly 2 * sqrt(k) * price? Or just sum of assets?
+  // For simplicity, let's just show the raw token amount / 1e18 as "Liquidity"
+
+  const yesLiquidity = yesReserves ? Number(yesReserves) / 1e18 : null;
+  const noLiquidity = noReserves ? Number(noReserves) / 1e18 : null;
+
+  // Calculate high-precision prices from reserves
+  let priceYesPrecise = 50;
+  let priceNoPrecise = 50;
+
+  if (yesReserves && noReserves) {
+    const yesRes = Number(yesReserves);
+    const noRes = Number(noReserves);
+    const total = yesRes + noRes;
+    if (total > 0) {
+      priceYesPrecise = (noRes / total) * 100;
+      priceNoPrecise = (yesRes / total) * 100;
+    }
+  }
 
   return {
-    priceYes,
-    priceNo,
-    yesPoolAddress: yesPoolAddress as `0x${string}` | undefined,
-    noPoolAddress: noPoolAddress as `0x${string}` | undefined,
-    yesLiquidityUSD: yesStats?.liquidityUSD ?? null,
-    noLiquidityUSD: noStats?.liquidityUSD ?? null,
+    priceYes: priceYesPrecise, // Return precise number instead of integer
+    priceNo: priceNoPrecise,   // Return precise number instead of integer
+    yesPoolAddress: undefined,
+    noPoolAddress: undefined,
+    yesLiquidityUSD: yesLiquidity,
+    noLiquidityUSD: noLiquidity,
+    refetch
   };
 }
+
 

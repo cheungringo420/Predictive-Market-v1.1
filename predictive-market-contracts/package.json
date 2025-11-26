@@ -2,34 +2,22 @@
   "name": "predictive-market-contracts",
   "version": "1.0.0",
   "main": "index.js",
+  "license": "MIT",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "hardhat test",
+    "compile": "hardhat compile"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "devDependencies": {
-    "@nomicfoundation/hardhat-chai-matchers": "^2.1.0",
-    "@nomicfoundation/hardhat-ethers": "^4.0.3",
-    "@nomicfoundation/hardhat-network-helpers": "^3.0.3",
-    "@nomicfoundation/hardhat-toolbox": "^6.1.0",
-    "@nomicfoundation/hardhat-verify": "^3.0.7",
-    "@typechain/ethers-v6": "^0.5.1",
-    "@typechain/hardhat": "^9.1.0",
-    "chai": "^6.2.1",
-    "dotenv": "^17.2.3",
-    "ethers": "^6.15.0",
-    "hardhat": "^2.22.17",
-    "hardhat-gas-reporter": "^2.3.0",
-    "solidity-coverage": "^0.8.16",
+    "@nomicfoundation/hardhat-ethers": "^3.0.5",
+    "@openzeppelin/contracts": "^5.0.2",
+    "@types/chai": "^4.3.11",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.11.24",
+    "chai": "^4.3.10",
+    "dotenv": "^16.4.5",
+    "ethers": "^6.11.1",
+    "hardhat": "^2.20.1",
     "ts-node": "^10.9.2",
-    "typechain": "^8.3.2",
-    "typescript": "^5.9.3"
-  },
-  "type": "module",
-  "dependencies": {
-    "@uniswap/v2-core": "^1.0.1",
-    "@uniswap/v2-periphery": "^1.1.0-beta.0"
+    "typescript": "^5.3.3"
   }
 }

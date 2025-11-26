@@ -15,11 +15,16 @@ contract MarketFactoryV3 {
     }
 
     function createMarket(string memory _question, string memory _metadataURI) external returns (address) {
+        // Deploy new MarketV3
+        // Note: MarketV3 constructor now initializes tokens and ownership.
         MarketV3 newMarket = new MarketV3(_question, _metadataURI, msg.sender, collateralToken);
         address marketAddress = address(newMarket);
+        
         allMarkets.push(marketAddress);
         marketsByCreator[msg.sender].push(marketAddress);
+        
         emit MarketCreated(marketAddress, _question, _metadataURI, msg.sender);
+        
         return marketAddress;
     }
 

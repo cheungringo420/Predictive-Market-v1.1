@@ -1,176 +1,58 @@
-// services/contracts/contractInfo.ts
-// Smart Contract Addresses and ABIs
+import { Address } from 'viem';
+import MarketFactoryV3Artifact from '../../abis/MarketFactoryV3.json';
+import MarketV3Artifact from '../../abis/MarketV3.json';
 
-// Network-specific addresses
-const FACTORY_ADDRESSES: Record<number, string> = {
-  84532: "0xF3eA8120BEd32a9E5229D832F305BE3335342Cfb", // Base Sepolia
-  11155111: "0xF3eA8120BEd32a9E5229D832F305BE3335342Cfb", // Sepolia
-  421614: "0xF3eA8120BEd32a9E5229D832F305BE3335342Cfb", // Arbitrum Sepolia
-  80002: "0xF3eA8120BEd32a9E5229D832F305BE3335342Cfb", // Polygon Amoy
+// Base Sepolia Addresses
+// TODO: Deploy contracts and update these addresses
+export const MARKET_FACTORY_ADDRESS = "0xffce02Dcb86Db2E20866d99c0dfd7e2405D3Bce6" as Address;
+export const MOCK_USDC_ADDRESS = "0x388FBde0222693293Ab060789E816FfC8e317FeA" as Address; // Updated mUSDC address
+
+export const MARKET_FACTORY_ABI = MarketFactoryV3Artifact.abi;
+export const MARKET_ABI = MarketV3Artifact.abi;
+
+// Legacy / Reference (Optional)
+export const UNISWAP_ROUTER_ADDRESS = "0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24" as Address;
+
+export const getFactoryAddress = (chainId: number) => {
+    return MARKET_FACTORY_ADDRESS;
 };
 
-const MOCK_USDC_ADDRESSES: Record<number, string> = {
-  84532: "0xb97D5A8b34b207e6303956E8c5DE4C58ff196421", // Base Sepolia
-  11155111: "0xb97D5A8b34b207e6303956E8c5DE4C58ff196421", // Sepolia
-  421614: "0xb97D5A8b34b207e6303956E8c5DE4C58ff196421", // Arbitrum Sepolia
-  80002: "0xb97D5A8b34b207e6303956E8c5DE4C58ff196421", // Polygon Amoy
+export const getMockUSDCAddress = (chainId: number) => {
+    return MOCK_USDC_ADDRESS;
 };
 
-export const getFactoryAddress = (chainId: number): string | null => {
-  return FACTORY_ADDRESSES[chainId] || null;
-};
-
-export const getMockUSDCAddress = (chainId: number): string | null => {
-  return MOCK_USDC_ADDRESSES[chainId] || null;
-};
-
-// Uniswap V2 Router
-export const uniswapV2RouterAddress = "0x1689E7B1F10000AE47eBfE339a4f69dECd19F602";
-
-// MarketFactoryV2 ABI - Complete interface
-export const factoryABI = [
-  {
-    inputs: [],
-    name: "getAllMarkets",
-    outputs: [{ internalType: "address[]", name: "", type: "address[]" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "marketCount",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "collateralToken",
-    outputs: [{ internalType: "address", name: "", type: "address" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [{ internalType: "string", name: "_question", type: "string" }],
-    name: "createMarket",
-    outputs: [{ internalType: "address", name: "", type: "address" }],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      { indexed: true, internalType: "address", name: "marketAddress", type: "address" },
-      { indexed: false, internalType: "string", name: "question", type: "string" },
-      { indexed: true, internalType: "address", name: "creator", type: "address" },
-    ],
-    name: "MarketCreated",
-    type: "event",
-  },
+export const erc20Abi = [
+    {
+        constant: true,
+        inputs: [
+            { name: "_owner", type: "address" },
+            { name: "_spender", type: "address" }
+        ],
+        name: "allowance",
+        outputs: [{ name: "", type: "uint256" }],
+        payable: false,
+        stateMutability: "view",
+        type: "function"
+    },
+    {
+        constant: false,
+        inputs: [
+            { name: "_spender", type: "address" },
+            { name: "_value", type: "uint256" }
+        ],
+        name: "approve",
+        outputs: [{ name: "", type: "bool" }],
+        payable: false,
+        stateMutability: "nonpayable",
+        type: "function"
+    },
+    {
+        constant: true,
+        inputs: [{ name: "_owner", type: "address" }],
+        name: "balanceOf",
+        outputs: [{ name: "balance", type: "uint256" }],
+        payable: false,
+        stateMutability: "view",
+        type: "function"
+    }
 ] as const;
-
-export const marketABI = [
-  {
-    inputs: [],
-    name: "question",
-    outputs: [{ internalType: "string", name: "", type: "string" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "yesPoolAddress",
-    outputs: [{ internalType: "address", name: "", type: "address" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "noPoolAddress",
-    outputs: [{ internalType: "address", name: "", type: "address" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "marketResolved",
-    outputs: [{ internalType: "bool", name: "", type: "bool" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "outcomeWasYes",
-    outputs: [{ internalType: "bool", name: "", type: "bool" }],
-    stateMutability: "view",
-    type: "function",
-  },
-] as const;
-
-export const uniswapV2PairABI = [
-  {
-    inputs: [],
-    name: "getReserves",
-    outputs: [
-      { internalType: "uint112", name: "reserve0", type: "uint112" },
-      { internalType: "uint112", name: "reserve1", type: "uint112" },
-      { internalType: "uint32", name: "blockTimestampLast", type: "uint32" },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "token0",
-    outputs: [{ internalType: "address", name: "", type: "address" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "token1",
-    outputs: [{ internalType: "address", name: "", type: "address" }],
-    stateMutability: "view",
-    type: "function",
-  },
-] as const;
-
-export const uniswapV2RouterABI = [
-  {
-    inputs: [
-      { internalType: "uint256", name: "amountIn", type: "uint256" },
-      { internalType: "uint256", name: "amountOutMin", type: "uint256" },
-      { internalType: "address[]", name: "path", type: "address[]" },
-      { internalType: "address", name: "to", type: "address" },
-      { internalType: "uint256", name: "deadline", type: "uint256" },
-    ],
-    name: "swapExactTokensForTokens",
-    outputs: [{ internalType: "uint256[]", name: "amounts", type: "uint256[]" }],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-] as const;
-
-export const mockUSDCABI = [
-  {
-    inputs: [
-      { internalType: "address", name: "spender", type: "address" },
-      { internalType: "uint256", name: "value", type: "uint256" },
-    ],
-    name: "approve",
-    outputs: [{ internalType: "bool", name: "", type: "bool" }],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      { internalType: "address", name: "owner", type: "address" },
-      { internalType: "address", name: "spender", type: "address" },
-    ],
-    name: "allowance",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-] as const;
-

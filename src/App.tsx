@@ -7,7 +7,7 @@ import { MarketDetailModal } from './components/MarketDetailModal';
 import { CreateMarketModal } from './components/CreateMarketModal';
 import { fetchMarkets, placeTrade } from './services/marketService';
 import { fetchMarketsFromContract } from './services/contractMarketService';
-import { factoryABI, getFactoryAddress } from './services/contracts/contractInfo';
+import { MARKET_FACTORY_ABI as factoryABI, getFactoryAddress } from './services/contracts/contractInfo';
 import type { Market, TradeDirection } from './types';
 
 const ONCHAIN_TIMEOUT_MS = 8000;

@@ -32,11 +32,10 @@ export const MarketList: React.FC<MarketListProps> = ({ markets, onTrade, onPlac
             <button
               key={index}
               onClick={() => setActiveFilter(category)}
-              className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
-                isSelected
-                  ? 'bg-brand-primary text-white shadow-lg'
-                  : 'bg-brand-surface text-brand-light hover:bg-brand-border'
-              }`}
+              className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${isSelected
+                  ? 'bg-brand-primary text-white shadow-lg shadow-brand-primary/20'
+                  : 'bg-brand-surface border border-brand-border/30 text-brand-muted hover:text-white hover:border-brand-border hover:bg-brand-surface-highlight'
+                }`}
             >
               {category || 'All'}
             </button>
@@ -46,10 +45,10 @@ export const MarketList: React.FC<MarketListProps> = ({ markets, onTrade, onPlac
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredMarkets.map((market) => (
-          <MarketCard 
-            key={market.id} 
-            market={market} 
-            onTrade={onTrade} 
+          <MarketCard
+            key={market.id}
+            market={market}
+            onTrade={onTrade}
             onPlaceTrade={onPlaceTrade}
             isConnected={isConnected}
           />
