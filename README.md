@@ -1,44 +1,62 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Predictive Horizon
 
-# Run and deploy your AI Studio app
+**Predictive Horizon** is a decentralized prediction market application built on the Base Sepolia testnet. It allows users to create markets, trade positions (YES/NO) on real-world events, and track market outcomes in a transparent and trustless environment.
 
-This contains everything you need to run your app locally.
+## 🚀 Features
 
-View your app in AI Studio: https://ai.studio/apps/drive/1JUHWzpFAe7nq0ys2u2X2TfTzb5cDfTVB
+- **Decentralized Trading**: Trade directly from your wallet using smart contracts.
+- **Market Creation**: Create new prediction markets with custom questions and end dates.
+- **Dynamic Pricing**: Automated Market Maker (AMM) logic for real-time price adjustments based on supply and demand.
+- **Wallet Integration**: Seamless connection with MetaMask and other Web3 wallets via RainbowKit.
+- **Responsive Design**: Modern, dark-themed UI optimized for both desktop and mobile.
 
-## Run Locally
+## 🛠️ Tech Stack
 
-**Prerequisites:**  Node.js
+- **Frontend**: React 19, TypeScript, Vite
+- **Styling**: TailwindCSS (Custom Design System)
+- **Web3 Integration**: Wagmi v2, Viem, RainbowKit
+- **State Management**: TanStack Query
+- **Smart Contracts**: Solidity (Deployed on Base Sepolia)
 
+## 📦 Installation & Setup
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd predictive-horizon
+   ```
 
-## Environment Variables
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-Create a `.env.local` file if you plan to push metadata to IPFS/Pinata. All keys are optional — without them metadata falls back to a local data URI.
+3. **Configure Environment Variables**
+   Create a `.env.local` file in the root directory (optional, for IPFS support):
+   ```env
+   VITE_PINATA_JWT=your_pinata_jwt_token
+   VITE_IPFS_GATEWAY=https://gateway.pinata.cloud/ipfs/
+   ```
 
-```
-VITE_PINATA_JWT=your_pinata_jwt_token
-VITE_IPFS_GATEWAY=https://gateway.pinata.cloud/ipfs/
-```
+4. **Run the development server**
+   ```bash
+   npm run dev
+   ```
 
-- `VITE_PINATA_JWT`: Optional Pinata JWT used when uploading metadata.
-- `VITE_IPFS_GATEWAY`: Optional gateway for reading IPFS metadata.
+## 🔗 Smart Contracts (Base Sepolia)
 
-## Metadata Storage
+| Contract | Address |
+|----------|---------|
+| **MarketFactoryV2** | `0xF3eA8120BEd32a9E5229D832F305BE3335342Cfb` |
+| **MockUSDC** | `0xb97D5A8b34b207e6303956E8c5DE4C58ff196421` |
 
-市場建立時會將 `question/description/category/endDate/image` 封裝成 JSON：
-1. 若設定 `VITE_PINATA_JWT`，會上傳至 Pinata 並回傳 `ipfs://` URI。
-2. 若無金鑰，則退回 `data:application/json;base64,...` 的本地 URI。
-3. 最後會把 `<metadata:URI>` 附加在問題字串結尾，並由前端在讀取市場時解析。
+## 🔒 Security
 
-## Refresh 行為
-- Header 右上角提供 `Refresh` 按鈕，可強制重新抓取鏈上/快取資料。
-- 系統亦會在 `MarketCreated` 事件、或每 45 秒背景自動刷新一次。
-- 若 RPC 延遲超過 8 秒，會自動 fallback 至 mock 市場，避免 UI 卡住。
+This project is a prototype for educational/demonstration purposes.
+- **Contracts**: The smart contracts are currently in a testnet environment.
+- **Audit**: This code has **not** been professionally audited. Use at your own risk.
+- **Reporting**: If you find a security vulnerability, please refer to [SECURITY.md](SECURITY.md).
+
+## 📄 License
+
+[MIT](LICENSE)

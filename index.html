@@ -1,50 +1,54 @@
-
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Predictive Horizon - A Web3 Prediction Market"
-    />
-    <title>Predictive Horizon</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              'brand-bg': '#0D1117',
-              'brand-surface': '#161B22',
-              'brand-border': '#30363D',
-              'brand-primary': '#58A6FF',
-              'brand-secondary': '#1F6FEB',
-              'brand-yes': '#3FB950',
-              'brand-no': '#F85149',
-              'brand-light': '#C9D1D9',
-              'brand-muted': '#8B949E',
-            }
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" href="/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="description" content="Predictive Horizon - A Web3 Prediction Market" />
+  <title>Predictive Horizon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            'brand-bg': '#0B0E11', // Deep, almost black navy
+            'brand-surface': '#151A21', // Slightly lighter
+            'brand-surface-highlight': '#1E232B', // Hover state
+            'brand-border': '#2D333B',
+            'brand-primary': '#448AFF', // Vibrant Blue
+            'brand-primary-hover': '#2970E6',
+            'brand-secondary': '#6E7681',
+            'brand-yes': '#2DA44E', // GitHub Green-ish
+            'brand-no': '#CF222E', // GitHub Red-ish
+            'brand-text': '#F0F6FC', // Almost white
+            'brand-muted': '#8B949E',
+            'brand-accent': '#A371F7', // Purple accent
+          },
+          boxShadow: {
+            'glow': '0 0 20px rgba(68, 138, 255, 0.15)',
+            'card': '0 4px 20px rgba(0, 0, 0, 0.2)',
           }
         }
       }
-    </script>
-  <script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
+    }
+  </script>
+
+  <link rel="stylesheet" href="/index.css">
 </head>
-  <body class="bg-brand-bg">
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-  <script type="module" src="/index.tsx"></script>
+
+<body class="bg-brand-bg">
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+  <div id="root"></div>
+  <script type="module" src="/src/index.tsx"></script>
 </body>
+
 </html>

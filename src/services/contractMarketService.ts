@@ -3,7 +3,7 @@
 
 import { readContract } from '@wagmi/core';
 import { wagmiConfig } from '../wagmiConfig';
-import { factoryABI, marketABI, getFactoryAddress } from './contracts/contractInfo';
+import { MARKET_FACTORY_ABI, MARKET_ABI, getFactoryAddress } from './contracts/contractInfo';
 import type { Market } from '../types';
 import { MarketCategory, MarketOutcome } from '../types';
 import { parseQuestionMetadata } from './metadataService';
@@ -33,33 +33,33 @@ export const fetchMarketsFromContract = async (chainId: number): Promise<Market[
 
     const marketAddresses = (await readContract(wagmiConfig, {
       address: factoryAddress as `0x${string}`,
-      abi: factoryABI,
+      abi: MARKET_FACTORY_ABI,
       functionName: 'getAllMarkets',
-    })) as `0x${string}`[];
+    } as any)) as `0x${string}`[];
 
     const markets = await Promise.all(
       marketAddresses.map(async (address) => {
         try {
           const questionRaw = (await readContract(wagmiConfig, {
             address,
-            abi: marketABI,
+            abi: MARKET_ABI,
             functionName: 'question',
-          })) as string;
+          } as any)) as string;
 
           const { questionText, metadataUri, metadata } = await parseQuestionMetadata(questionRaw);
 
           const marketResolved = (await readContract(wagmiConfig, {
             address,
-            abi: marketABI,
+            abi: MARKET_ABI,
             functionName: 'marketResolved',
-          })) as boolean;
+          } as any)) as boolean;
 
           const outcomeWasYes = marketResolved
             ? ((await readContract(wagmiConfig, {
-                address,
-                abi: marketABI,
-                functionName: 'outcomeWasYes',
-              })) as boolean)
+              address,
+              abi: MARKET_ABI,
+              functionName: 'outcomeWasYes',
+            } as any)) as boolean)
             : false;
 
           const resolvedOutcome = marketResolved
@@ -67,6 +67,30 @@ export const fetchMarketsFromContract = async (chainId: number): Promise<Market[
               ? MarketOutcome.YES
               : MarketOutcome.NO
             : MarketOutcome.PENDING;
+
+          // Fetch Prices and Reserves
+          const yesPriceRaw = (await readContract(wagmiConfig, {
+            address,
+            abi: MARKET_ABI,
+            functionName: 'getPrice',
+            args: [0],
+          } as any)) as bigint;
+
+          const yesReservesRaw = (await readContract(wagmiConfig, {
+            address,
+            abi: MARKET_ABI,
+            functionName: 'yesReserves',
+          } as any)) as bigint;
+
+          const noReservesRaw = (await readContract(wagmiConfig, {
+            address,
+            abi: MARKET_ABI,
+            functionName: 'noReserves',
+          } as any)) as bigint;
+
+          const yesPrice = Number(yesPriceRaw);
+          const poolYes = Number(yesReservesRaw) / 1e18; // Display as tokens
+          const poolNo = Number(noReservesRaw) / 1e18;
 
           const category = getDefaultCategory(metadata?.category);
           const endsAt = getDefaultEndDate(metadata?.endDate);
@@ -79,13 +103,13 @@ export const fetchMarketsFromContract = async (chainId: number): Promise<Market[
             title,
             description,
             category,
-            yesPrice: 50,
+            yesPrice,
             imageUrl,
             outcome: resolvedOutcome,
             endsAt,
-            poolYes: 0,
-            poolNo: 0,
-            priceHistory: [{ date: new Date(), yesPrice: 50 }],
+            poolYes,
+            poolNo,
+            priceHistory: [{ date: new Date(), yesPrice }],
             feeBps: 100,
             metadataUri,
             source: 'onchain',
@@ -105,3 +129,4 @@ export const fetchMarketsFromContract = async (chainId: number): Promise<Market[
     return [];
   }
 };
+

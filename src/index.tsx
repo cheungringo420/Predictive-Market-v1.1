@@ -8,6 +8,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { wagmiConfig } from './wagmiConfig';
 
+import ErrorBoundary from './components/ErrorBoundary';
+
 const queryClient = new QueryClient();
 
 const rootElement = document.getElementById('root');
@@ -17,14 +19,25 @@ if (!rootElement) {
 
 const root = ReactDOM.createRoot(rootElement);
 root.render(
-  <React.StrictMode>
+  <ErrorBoundary>
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider>
           <App />
-          <Toaster position="top-right" />
+          <Toaster
+            position="top-right"
+            containerStyle={{ zIndex: 99999 }}
+            toastOptions={{
+              duration: 5000,
+              style: {
+                background: '#1e293b',
+                color: '#fff',
+                border: '1px solid #334155',
+              },
+            }}
+          />
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
-  </React.StrictMode>
+  </ErrorBoundary>
 );
