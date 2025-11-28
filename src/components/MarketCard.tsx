@@ -151,150 +151,156 @@ export const MarketCard: React.FC<MarketCardProps> = ({ market, onTrade, onPlace
 
     return (
         <div
-            className="glass-panel rounded-xl shadow-card overflow-hidden flex flex-col transition-all duration-300 hover:shadow-glow hover:-translate-y-1 group"
+            className={`relative group border-glow rounded-xl transition-all duration-300 hover:-translate-y-2 hover:scale-[1.02] hover:shadow-glow ${isUpdating ? 'syncing-card' : ''}`}
             onClick={() => onTrade(market)}
         >
-            <div className="relative cursor-pointer overflow-hidden">
-                <img src={market.imageUrl} alt={market.title} className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-105" />
-                <div className="absolute inset-0 bg-gradient-to-t from-brand-bg via-transparent to-transparent opacity-90"></div>
-                <CategoryPill category={market.category} />
-                <div className="absolute bottom-3 left-4 right-4">
-                    <h3 className="text-lg font-bold text-white leading-tight shadow-black drop-shadow-md">{market.title}</h3>
-                </div>
-            </div>
+            {/* Inner Card Container - Handles content clipping and background */}
+            <div className="glass-panel rounded-xl shadow-card overflow-hidden flex flex-col h-full relative z-10 transition-colors duration-300">
+                <div className={`absolute inset-0 shimmer-effect transition-opacity duration-500 pointer-events-none ${isUpdating ? 'opacity-100' : 'opacity-0 hover-shine-trigger'}`}></div>
 
-            <div className="p-5 flex flex-col flex-grow">
-                <div className="flex justify-between items-center mb-3 text-xs text-brand-muted font-medium uppercase tracking-wider">
-                    <span>Ends {market.endsAt.toLocaleDateString()}</span>
-                    {totalLiquidity && (
-                        <span className="flex items-center gap-1">
-                            <span className="w-2 h-2 rounded-full bg-brand-primary"></span>
-                            ${totalLiquidity.toLocaleString(undefined, { maximumFractionDigits: 0 })} Liquidity
-                        </span>
-                    )}
+                <div className="relative cursor-pointer overflow-hidden">
+                    <img src={market.imageUrl} alt={market.title} className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-brand-bg via-transparent to-transparent opacity-90"></div>
+                    <CategoryPill category={market.category} />
+                    <div className="absolute bottom-3 left-4 right-4">
+                        <h3 className="text-lg font-bold text-white leading-tight shadow-black drop-shadow-md">{market.title}</h3>
+                    </div>
                 </div>
 
-
-
-                {/* Fast Trade UI */}
-                {!isResolved && (
-                    <div className="mt-auto space-y-3" onClick={e => e.stopPropagation()}>
-                        {!showTradeUI ? (
-                            <div className="grid grid-cols-2 gap-3 relative">
-                                {isUpdating && (
-                                    <div className="absolute -top-8 left-0 right-0 flex justify-center animate-fade-in">
-                                        <span className="bg-brand-surface/90 text-brand-primary text-[10px] px-2 py-1 rounded-full border border-brand-primary/30 flex items-center gap-1 shadow-lg backdrop-blur-sm">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse"></span>
-                                            Syncing prices...
-                                        </span>
-                                    </div>
-                                )}
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setShowTradeUI(true);
-                                    }}
-                                    className={`flex flex-col items-center justify-center p-3 rounded-xl bg-brand-yes/10 border-2 border-brand-yes/30 hover:bg-brand-yes/20 hover:border-brand-yes/60 transition-all group/btn shadow-sm hover:shadow-md ${isUpdating ? 'animate-pulse border-brand-yes/50' : ''}`}
-                                >
-                                    <span className="text-brand-yes font-extrabold text-lg group-hover/btn:scale-105 transition-transform">Buy YES</span>
-                                    <span className="text-xl font-black text-brand-yes drop-shadow-sm tracking-tight">${yesPriceValue.toFixed(2)}</span>
-                                </button>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setShowTradeUI(true);
-                                    }}
-                                    className={`flex flex-col items-center justify-center p-3 rounded-xl bg-brand-no/10 border-2 border-brand-no/30 hover:bg-brand-no/20 hover:border-brand-no/60 transition-all group/btn shadow-sm hover:shadow-md ${isUpdating ? 'animate-pulse border-brand-no/50' : ''}`}
-                                >
-                                    <span className="text-brand-no font-extrabold text-lg group-hover/btn:scale-105 transition-transform">Buy NO</span>
-                                    <span className="text-xl font-black text-brand-no drop-shadow-sm tracking-tight">${noPriceValue.toFixed(2)}</span>
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="bg-brand-bg/90 rounded-lg p-3 border border-brand-border/50 space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-xs text-brand-muted font-medium">Fast Trade</span>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); setShowTradeUI(false); }}
-                                        className="text-brand-muted hover:text-white"
-                                    >
-                                        ✕
-                                    </button>
-                                </div>
-
-                                <div className="flex items-center justify-between bg-brand-bg rounded p-2 border border-brand-border/30">
-                                    <span className="text-brand-muted text-xs">Amount</span>
-                                    <div className="flex items-center">
-                                        <span className="text-brand-muted text-xs mr-1">$</span>
-                                        <input
-                                            type="number"
-                                            value={tradeAmount}
-                                            onChange={(e) => setTradeAmount(e.target.value)}
-                                            className="bg-transparent text-right text-white font-bold outline-none w-16 text-sm pr-1"
-                                            placeholder="10"
-                                            min="1"
-                                            max="1000"
-                                        />
-                                    </div>
-                                </div>
-
-                                <input
-                                    type="range"
-                                    min="1"
-                                    max="1000"
-                                    value={tradeAmount || 0}
-                                    onChange={(e) => setTradeAmount(e.target.value)}
-                                    className="w-full h-1.5 bg-brand-border rounded-lg appearance-none cursor-pointer accent-brand-primary"
-                                />
-                                <div className="flex justify-between text-[10px] text-brand-muted px-1">
-                                    <span>$1</span>
-                                    <span>$1000</span>
-                                </div>
-
-                                {/* Price Impact Display */}
-                                {tradeAmount && Number(tradeAmount) > 0 && (
-                                    <div className="flex justify-between items-center text-xs px-1">
-                                        <span className="text-brand-muted">Est. Price Impact</span>
-                                        <span className="text-brand-warning">
-                                            {(() => {
-                                                return "~" + (Number(tradeAmount) / 1000).toFixed(2) + "%"; // Mock impact for now to show UI
-                                            })()}
-                                        </span>
-                                    </div>
-                                )}
-
-                                <div className="grid grid-cols-2 gap-3 pt-2">
-                                    <button
-                                        onClick={(e) => handleFastTrade(e, TradeDirectionEnum.YES)}
-                                        disabled={!isConnected || isTrading}
-                                        className="py-2 rounded bg-brand-yes text-white font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
-                                    >
-                                        {isTrading && loadingDirection === TradeDirectionEnum.YES ? (
-                                            <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                        ) : "YES"}
-                                    </button>
-                                    <button
-                                        onClick={(e) => handleFastTrade(e, TradeDirectionEnum.NO)}
-                                        disabled={!isConnected || isTrading}
-                                        className="py-2 rounded bg-brand-no text-white font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
-                                    >
-                                        {isTrading && loadingDirection === TradeDirectionEnum.NO ? (
-                                            <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                        ) : "NO"}
-                                    </button>
-                                </div>
-                            </div>
+                <div className="p-5 flex flex-col flex-grow relative z-10">
+                    <div className="flex justify-between items-center mb-3 text-xs text-brand-muted font-medium uppercase tracking-wider">
+                        <span>Ends {market.endsAt.toLocaleDateString()}</span>
+                        {totalLiquidity && (
+                            <span className="flex items-center gap-1">
+                                <span className="w-2 h-2 rounded-full bg-brand-primary"></span>
+                                ${totalLiquidity.toLocaleString(undefined, { maximumFractionDigits: 0 })} Liquidity
+                            </span>
                         )}
                     </div>
-                )}
 
-                {isResolved && <ResolutionBanner outcome={market.outcome} />}
+                    {/* Fast Trade UI */}
+                    {!isResolved && (
+                        <div className="mt-auto space-y-3" onClick={e => e.stopPropagation()}>
+                            {!showTradeUI ? (
+                                <div className="grid grid-cols-2 gap-3 relative">
+                                    {isUpdating && (
+                                        <div className="absolute -top-10 left-0 right-0 flex justify-center animate-fade-in z-20">
+                                            <span className="bg-brand-surface/95 text-brand-primary text-xs font-bold px-3 py-1.5 rounded-full border border-brand-primary/50 flex items-center gap-2 shadow-[0_0_15px_rgba(59,130,246,0.5)] backdrop-blur-md animate-pulse-glow">
+                                                <span className="relative flex h-2.5 w-2.5">
+                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-primary opacity-75"></span>
+                                                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-brand-primary"></span>
+                                                </span>
+                                                Syncing prices...
+                                            </span>
+                                        </div>
+                                    )}
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setShowTradeUI(true);
+                                        }}
+                                        className={`flex flex-col items-center justify-center p-3 rounded-xl bg-brand-yes/10 border-2 border-brand-yes/30 hover:bg-brand-yes/20 hover:border-brand-yes/60 transition-all group/btn shadow-sm hover:shadow-md ${isUpdating ? 'opacity-50 pointer-events-none' : ''}`}
+                                    >
+                                        <span className="text-brand-yes font-extrabold text-lg group-hover/btn:scale-105 transition-transform">Buy YES</span>
+                                        <span className="text-xl font-black text-brand-yes drop-shadow-sm tracking-tight">${yesPriceValue.toFixed(2)}</span>
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setShowTradeUI(true);
+                                        }}
+                                        className={`flex flex-col items-center justify-center p-3 rounded-xl bg-brand-no/10 border-2 border-brand-no/30 hover:bg-brand-no/20 hover:border-brand-no/60 transition-all group/btn shadow-sm hover:shadow-md ${isUpdating ? 'opacity-50 pointer-events-none' : ''}`}
+                                    >
+                                        <span className="text-brand-no font-extrabold text-lg group-hover/btn:scale-105 transition-transform">Buy NO</span>
+                                        <span className="text-xl font-black text-brand-no drop-shadow-sm tracking-tight">${noPriceValue.toFixed(2)}</span>
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="bg-brand-bg/90 rounded-lg p-3 border border-brand-border/50 space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-xs text-brand-muted font-medium">Fast Trade</span>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setShowTradeUI(false); }}
+                                            className="text-brand-muted hover:text-white"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+
+                                    <div className="flex items-center justify-between bg-brand-bg rounded p-2 border border-brand-border/30">
+                                        <span className="text-brand-muted text-xs">Amount</span>
+                                        <div className="flex items-center">
+                                            <span className="text-brand-muted text-xs mr-1">$</span>
+                                            <input
+                                                type="number"
+                                                value={tradeAmount}
+                                                onChange={(e) => setTradeAmount(e.target.value)}
+                                                className="bg-transparent text-right text-white font-bold outline-none w-16 text-sm pr-1"
+                                                placeholder="10"
+                                                min="1"
+                                                max="1000"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <input
+                                        type="range"
+                                        min="1"
+                                        max="1000"
+                                        value={tradeAmount || 0}
+                                        onChange={(e) => setTradeAmount(e.target.value)}
+                                        className="w-full h-1.5 bg-brand-border rounded-lg appearance-none cursor-pointer accent-brand-primary"
+                                    />
+                                    <div className="flex justify-between text-[10px] text-brand-muted px-1">
+                                        <span>$1</span>
+                                        <span>$1000</span>
+                                    </div>
+
+                                    {/* Price Impact Display */}
+                                    {tradeAmount && Number(tradeAmount) > 0 && (
+                                        <div className="flex justify-between items-center text-xs px-1">
+                                            <span className="text-brand-muted">Est. Price Impact</span>
+                                            <span className="text-brand-warning">
+                                                {(() => {
+                                                    return "~" + (Number(tradeAmount) / 1000).toFixed(2) + "%"; // Mock impact for now to show UI
+                                                })()}
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    <div className="grid grid-cols-2 gap-3 pt-2">
+                                        <button
+                                            onClick={(e) => handleFastTrade(e, TradeDirectionEnum.YES)}
+                                            disabled={!isConnected || isTrading}
+                                            className="py-2 rounded bg-brand-yes text-white font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                                        >
+                                            {isTrading && loadingDirection === TradeDirectionEnum.YES ? (
+                                                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                            ) : "YES"}
+                                        </button>
+                                        <button
+                                            onClick={(e) => handleFastTrade(e, TradeDirectionEnum.NO)}
+                                            disabled={!isConnected || isTrading}
+                                            className="py-2 rounded bg-brand-no text-white font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                                        >
+                                            {isTrading && loadingDirection === TradeDirectionEnum.NO ? (
+                                                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                            ) : "NO"}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {isResolved && <ResolutionBanner outcome={market.outcome} />}
+                </div>
             </div>
         </div>
     );
