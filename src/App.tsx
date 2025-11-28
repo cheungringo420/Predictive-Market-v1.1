@@ -9,6 +9,7 @@ import { fetchMarkets, placeTrade } from './services/marketService';
 import { fetchMarketsFromContract } from './services/contractMarketService';
 import { MARKET_FACTORY_ABI as factoryABI, getFactoryAddress } from './services/contracts/contractInfo';
 import type { Market, TradeDirection } from './types';
+import Background from './components/Background';
 
 const ONCHAIN_TIMEOUT_MS = 8000;
 const POLL_INTERVAL_MS = 45000;
@@ -154,36 +155,39 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen text-brand-light font-sans">
-      <Header
-        onCreateMarketClick={() => setIsCreateMarketOpen(true)}
-        onRefreshMarkets={handleManualRefresh}
-        isRefreshing={isLoading || isBackgroundRefreshing}
-        lastUpdated={lastUpdated}
-        networkLabel={networkLabel}
-      />
-      <main className="container mx-auto px-4 py-8">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-white">Prediction Markets</h1>
-          <p className="text-lg text-brand-muted mt-2">Trade on the outcome of real-world events.</p>
-        </div>
-        {renderContent()}
-      </main>
-      <MarketDetailModal
-        market={selectedMarket}
-        onClose={handleCloseMarketModal}
-        isConnected={isConnected}
-        onPlaceTrade={handlePlaceTrade}
-      />
-      <CreateMarketModal
-        isOpen={isCreateMarketOpen}
-        onClose={() => setIsCreateMarketOpen(false)}
-        onMarketCreated={handleMarketCreated}
-      />
-      <footer className="text-center py-6 border-t border-brand-border mt-12">
-        <p className="text-brand-muted">Predictive Horizon - Capstone Project Prototype</p>
-        <p className="text-xs text-gray-500 mt-1">This is a conceptual prototype. Not for real financial transactions.</p>
-      </footer>
+    <div className="min-h-screen text-brand-light font-sans relative">
+      <Background />
+      <div className="relative z-10">
+        <Header
+          onCreateMarketClick={() => setIsCreateMarketOpen(true)}
+          onRefreshMarkets={handleManualRefresh}
+          isRefreshing={isLoading || isBackgroundRefreshing}
+          lastUpdated={lastUpdated}
+          networkLabel={networkLabel}
+        />
+        <main className="container mx-auto px-4 py-8">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-5xl font-bold text-white">Prediction Markets</h1>
+            <p className="text-lg text-brand-muted mt-2">Trade on the outcome of real-world events.</p>
+          </div>
+          {renderContent()}
+        </main>
+        <MarketDetailModal
+          market={selectedMarket}
+          onClose={handleCloseMarketModal}
+          isConnected={isConnected}
+          onPlaceTrade={handlePlaceTrade}
+        />
+        <CreateMarketModal
+          isOpen={isCreateMarketOpen}
+          onClose={() => setIsCreateMarketOpen(false)}
+          onMarketCreated={handleMarketCreated}
+        />
+        <footer className="text-center py-6 border-t border-brand-border mt-12">
+          <p className="text-brand-muted">Predictive Horizon - Capstone Project Prototype</p>
+          <p className="text-xs text-gray-500 mt-1">This is a conceptual prototype. Not for real financial transactions.</p>
+        </footer>
+      </div>
     </div>
   );
 };
