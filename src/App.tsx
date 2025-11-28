@@ -154,7 +154,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-brand-bg text-brand-light font-sans">
+    <div className="min-h-screen text-brand-light font-sans">
       <Header
         onCreateMarketClick={() => setIsCreateMarketOpen(true)}
         onRefreshMarkets={handleManualRefresh}
