@@ -19,7 +19,7 @@ export const Header: React.FC<HeaderProps> = ({ onCreateMarketClick, onRefreshMa
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-brand-bg/80 backdrop-blur-md border-b border-brand-border/50 shadow-lg">
+    <header className="sticky top-0 z-40 bg-gradient-to-r from-[#050b14]/95 via-[#312e81]/80 to-[#050b14]/95 backdrop-blur-md border-b border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center mb-2">
           <div
@@ -35,10 +35,8 @@ export const Header: React.FC<HeaderProps> = ({ onCreateMarketClick, onRefreshMa
             }}
             aria-label="Go to home page"
           >
-            <div className="bg-brand-surface border border-brand-border rounded-lg p-2 transition-all duration-300 group-hover:border-brand-primary group-hover:shadow-glow">
-              <svg className="w-6 h-6 text-brand-primary" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5-10-5-10 5z" />
-              </svg>
+            <div className="rounded-lg p-1 transition-all duration-300 group-hover:scale-110">
+              <img src="/favicon.png" alt="PH Logo" className="w-8 h-8 object-contain" />
             </div>
             <span className="text-xl font-bold text-white tracking-tight group-hover:text-brand-primary transition-colors">Predictive Horizon</span>
           </div>
