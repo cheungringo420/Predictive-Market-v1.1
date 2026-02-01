@@ -466,11 +466,37 @@ body::after {
 
 .card-image {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     min-height: 400px;
     position: relative;
     z-index: 1;
+}
+
+.image-caption {
+    margin-top: 8px;
+    font-size: 0.75rem;
+    color: var(--text-muted, #6b7280);
+}
+
+.image-caption a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.image-caption a:hover {
+    text-decoration: underline;
+}
+
+.card-img {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    min-height: 400px;
+    object-fit: contain;
+    border-radius: 12px;
+    border: 1px solid rgba(48, 54, 61, 0.3);
 }
 
 .image-placeholder {
