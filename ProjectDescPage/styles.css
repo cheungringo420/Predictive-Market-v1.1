@@ -230,6 +230,15 @@ body::after {
     }
 }
 
+.hero-tagline {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--primary-color);
+    margin-bottom: 16px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
 .hero-title {
     font-size: 72px;
     font-weight: 700;
@@ -313,6 +322,10 @@ body::after {
     position: relative;
 }
 
+.section-overview {
+    padding-bottom: 48px;
+}
+
 .section::after {
     content: '';
     position: absolute;
@@ -351,10 +364,57 @@ body::after {
     letter-spacing: -0.03em;
 }
 
+.feature-highlights + .section-title {
+    margin-top: 56px;
+}
+
 .section-description {
     font-size: 20px;
     color: var(--text-secondary);
     line-height: 1.7;
+}
+
+.feature-highlights {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+    margin-top: 64px;
+    max-width: 1100px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.feature-highlight {
+    background: rgba(22, 27, 34, 0.6);
+    border: 1px solid rgba(48, 54, 61, 0.5);
+    border-radius: 12px;
+    padding: 28px 24px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.feature-highlight:hover {
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.15);
+}
+
+.feature-icon {
+    font-size: 2.5rem;
+    display: block;
+    margin-bottom: 16px;
+}
+
+.feature-highlight-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+}
+
+.feature-highlight-desc {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.6;
 }
 
 /* Content Section */
@@ -825,6 +885,15 @@ body::after {
         font-size: 40px;
     }
 
+    .feature-highlights + .section-title {
+        margin-top: 40px;
+    }
+
+    .feature-highlights {
+        grid-template-columns: repeat(2, 1fr);
+        margin-top: 48px;
+    }
+
     .content-card {
         grid-template-columns: 1fr;
         gap: 48px;
@@ -886,12 +955,25 @@ body::after {
         padding: 60px 0;
     }
 
+    .section-overview {
+        padding-bottom: 32px;
+    }
+
     .section-title {
         font-size: 32px;
     }
 
+    .feature-highlights + .section-title {
+        margin-top: 32px;
+    }
+
     .section-description {
         font-size: 18px;
+    }
+
+    .feature-highlights {
+        grid-template-columns: 1fr;
+        margin-top: 40px;
     }
 
     .content-section {
